@@ -211,7 +211,7 @@ export function VoiceRail({
                     className="data text-[10px]"
                     style={{ color: "var(--color-lilac)" }}
                   >
-                    {t.finalizeMs}ms · {t.partials} updates
+                    {t.endpointMs}ms · {t.partials} updates
                   </span>
                 </div>
                 <p className="mt-1 text-sm leading-snug text-paper">

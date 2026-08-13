@@ -2,19 +2,21 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { rms } from "./audio";
-import { KEYTERMS } from "./agent";
+import { KEYTERMS, STREAM_PROMPT, VOICE_FOCUS } from "./agent";
 import { percentile } from "./stats";
 
 const STREAM_WS = "wss://streaming.assemblyai.com/v3/ws";
 const RATE = 16000;
+/** RMS above this counts as speech rather than room noise. */
+const VOICED_RMS = 0.015;
 
 export type StreamWord = { text: string; final: boolean; confidence: number };
 
 export type FinishedTurn = {
   order: number;
   transcript: string;
-  /** ms from the first partial of this turn to the finalized, formatted turn */
-  finalizeMs: number;
+  /** ms from the mic going quiet to the formatted final turn landing */
+  endpointMs: number;
   partials: number;
   confidence: number;
 };
@@ -22,10 +24,15 @@ export type FinishedTurn = {
 export type StreamMetrics = {
   /** ms from speech onset to the first partial transcript landing */
   firstPartialMs: number | null;
-  /** ms from first partial to finalized turn, last turn */
-  finalizeMs: number | null;
-  p50FinalizeMs: number | null;
-  p95FinalizeMs: number | null;
+  /**
+   * ms from the mic going quiet to the formatted final turn. Measured from a
+   * local VAD, same as the agent path — timing the whole turn would just measure
+   * how long the speaker talked, and timing the formatting step reads zero
+   * because the formatted turn arrives in the same tick as the last partial.
+   */
+  endpointMs: number | null;
+  p50EndpointMs: number | null;
+  p95EndpointMs: number | null;
   /** words in finalized turns, and the rate they arrived at */
   totalWords: number;
   wordsPerMin: number | null;
@@ -42,9 +49,9 @@ export type StreamMetrics = {
 
 const EMPTY: StreamMetrics = {
   firstPartialMs: null,
-  finalizeMs: null,
-  p50FinalizeMs: null,
-  p95FinalizeMs: null,
+  endpointMs: null,
+  p50EndpointMs: null,
+  p95EndpointMs: null,
   totalWords: 0,
   wordsPerMin: null,
   wordConfidence: null,
@@ -73,6 +80,12 @@ export function useStreaming() {
   const node = useRef<AudioWorkletNode | null>(null);
 
   const turnOpenedAt = useRef(new Map<number, number>());
+  /**
+   * Timing the whole turn measures how long the speaker talked, not latency. The
+   * useful number is how long after the last transcript update the formatted
+   * version landed.
+   */
+  const lastVoicedAt = useRef<number | null>(null);
   const partialCount = useRef(new Map<number, number>());
   const speechStartedAt = useRef<number | null>(null);
   const finalizeSamples = useRef<number[]>([]);
@@ -112,6 +125,7 @@ export function useStreaming() {
     turnOpenedAt.current.clear();
     partialCount.current.clear();
     finalizeSamples.current = [];
+    lastVoicedAt.current = null;
     speechStartedAt.current = null;
     bytes.current = 0;
 
@@ -141,6 +155,11 @@ export function useStreaming() {
       url.searchParams.set("format_turns", "true");
       url.searchParams.set("mode", "balanced");
       url.searchParams.set("keyterms_prompt", JSON.stringify(KEYTERMS));
+      // domain context — Universal-3.5 Pro only, and free accuracy on car talk
+      url.searchParams.set("prompt", STREAM_PROMPT);
+      // isolate the speaker from a noisy room before transcription
+      url.searchParams.set("voice_focus", VOICE_FOCUS.mode);
+      url.searchParams.set("voice_focus_threshold", String(VOICE_FOCUS.threshold));
 
       const sock = new WebSocket(url);
       // this endpoint takes raw binary audio frames, not base64 JSON
@@ -173,7 +192,9 @@ export function useStreaming() {
             node.current = worklet;
             worklet.port.onmessage = (e: MessageEvent<ArrayBuffer>) => {
               if (sock.readyState !== WebSocket.OPEN) return;
-              setMicLevel(rms(new Int16Array(e.data)));
+              const level = rms(new Int16Array(e.data));
+              setMicLevel(level);
+              if (level > VOICED_RMS) lastVoicedAt.current = performance.now();
               sock.send(e.data);
               bytes.current += e.data.byteLength;
               setBytesSent(bytes.current);
@@ -210,6 +231,7 @@ export function useStreaming() {
               (partialCount.current.get(order) ?? 0) + 1,
             );
 
+
             const raw = (msg.words ?? []) as Array<{
               text: string;
               word_is_final?: boolean;
@@ -236,19 +258,21 @@ export function useStreaming() {
             }
 
             if (msg.end_of_turn && msg.turn_is_formatted) {
-              const openedAt = turnOpenedAt.current.get(order) ?? now;
               const transcript = String(msg.transcript ?? "");
-              const finalizeMs = Math.round(now - openedAt);
+              const endpointMs = lastVoicedAt.current
+                ? Math.round(now - lastVoicedAt.current)
+                : null;
+              lastVoicedAt.current = null;
 
               if (transcript.trim()) {
-                finalizeSamples.current.push(finalizeMs);
+                if (endpointMs != null) finalizeSamples.current.push(endpointMs);
                 const all = finalizeSamples.current;
                 setTurns((t) => [
                   ...t,
                   {
                     order,
                     transcript,
-                    finalizeMs,
+                    endpointMs: endpointMs ?? 0,
                     partials: partialCount.current.get(order) ?? 1,
                     confidence: Number(msg.end_of_turn_confidence ?? 0),
                   },
@@ -260,9 +284,9 @@ export function useStreaming() {
                     m.totalWords + transcript.trim().split(/\s+/).length;
                   return {
                     ...m,
-                    finalizeMs,
-                    p50FinalizeMs: percentile(all, 50),
-                    p95FinalizeMs: percentile(all, 95),
+                    endpointMs,
+                    p50EndpointMs: percentile(all, 50),
+                    p95EndpointMs: percentile(all, 95),
                     totalWords,
                     wordsPerMin:
                       spokenMin > 0.05 ? Math.round(totalWords / spokenMin) : null,

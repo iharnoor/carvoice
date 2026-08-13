@@ -182,6 +182,28 @@ export const TURN_DETECTION = {
   interrupt_response: true,
 };
 
+/**
+ * Domain context for the transcription endpoint. It carries context about the
+ * audio — its domain, topic or scenario — so the model recognises the vocabulary
+ * that context makes likely. It is not a formatting instruction.
+ *
+ * Deliberately short: AssemblyAI's own examples are one imperative sentence
+ * naming the scenario ("Transcribe this cardiology consultation call"), and the
+ * model infers the entities from there. Universal-3.5 Pro only, 1750 char max.
+ */
+export const STREAM_PROMPT =
+  "Transcribe this call between a customer and a used-car dealership, covering vehicle trims, monthly payments, APR and test drive bookings.";
+
+/**
+ * Voice Focus isolates the primary voice and suppresses background noise before
+ * transcription. `near-field` is the right setting for a laptop mic or headset —
+ * which is exactly the situation at a meetup.
+ */
+export const VOICE_FOCUS = {
+  mode: "near-field",
+  threshold: 0.7,
+} as const;
+
 /** Terms worth boosting so the model nails them on first pass. */
 export const KEYTERMS = [
   "Carvoice",

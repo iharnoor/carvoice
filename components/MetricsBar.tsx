@@ -168,19 +168,19 @@ export function MetricsBar({
             />
             <Tile
               big
-              label="p50 finalize"
-              value={ms(stream.p50FinalizeMs)}
+              label="p50 endpoint"
+              value={ms(stream.p50EndpointMs)}
               unit="ms"
               tone="amber"
-              hint="Median time from first partial to a formatted, punctuated final turn."
+              hint="Median time from the mic going quiet to the formatted turn landing. This is how fast your own agent would learn the caller had finished."
             />
             <Tile
               big
-              label="p95 finalize"
-              value={ms(stream.p95FinalizeMs)}
+              label="p95 endpoint"
+              value={ms(stream.p95EndpointMs)}
               unit="ms"
               tone="amber"
-              hint="95th percentile finalize time across this session."
+              hint="95th percentile of the same measurement. Formatting itself is free — the formatted turn arrives in the same tick as the last partial."
             />
             <Tile
               big
@@ -208,10 +208,10 @@ export function MetricsBar({
               hint="How sure the model was that your turn had actually ended."
             />
             <Tile
-              label="Latest finalize"
-              value={ms(stream.finalizeMs)}
+              label="Latest endpoint"
+              value={ms(stream.endpointMs)}
               unit="ms"
-              hint="Finalize time for the most recent turn."
+              hint="Endpoint latency for the most recent turn."
             />
             <Tile
               label="Words"
