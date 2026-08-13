@@ -39,3 +39,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# presentation material, not part of the demo
+talk-prep.html
+
+# machine-local Claude Code permissions (launch.json is committed)
+.claude/settings.local.json
