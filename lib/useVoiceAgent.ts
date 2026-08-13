@@ -17,6 +17,13 @@ const AGENT_WS = "wss://agents.assemblyai.com/v1/ws";
 const RATE = 24000;
 /** RMS above this counts as speech rather than room noise. */
 const VOICED_RMS = 0.015;
+/**
+ * The server cannot finalize a turn before waiting out `min_silence`, so any
+ * voice-to-voice sample faster than that is a measurement artifact — the mic was
+ * still picking up voice (or speaker bleed) when the turn closed. Dropping these
+ * keeps p50/p95 honest rather than flattering.
+ */
+const MIN_PLAUSIBLE_E2E_MS = TURN_DETECTION.min_silence;
 
 export type Status = "idle" | "connecting" | "live" | "ended" | "error";
 export type TurnState = "listening" | "thinking" | "speaking" | "interrupted";
@@ -358,12 +365,14 @@ export function useVoiceAgent(effects: ToolEffects) {
                 : null;
               lastVoicedAt.current = null; // consumed — never reuse for a later turn
               speechStoppedAt.current = null;
-              if (e2eMs != null) e2eSamples.current.push(e2eMs);
+
+              const plausible = e2eMs != null && e2eMs >= MIN_PLAUSIBLE_E2E_MS;
+              if (plausible) e2eSamples.current.push(e2eMs);
               const all = e2eSamples.current;
               setMetrics((m) => ({
                 ...m,
-                replyMs,
-                e2eMs,
+                replyMs: plausible ? replyMs : m.replyMs,
+                e2eMs: plausible ? e2eMs : m.e2eMs,
                 bestE2eMs: all.length ? Math.min(...all) : m.bestE2eMs,
                 p50E2eMs: percentile(all, 50),
                 p95E2eMs: percentile(all, 95),

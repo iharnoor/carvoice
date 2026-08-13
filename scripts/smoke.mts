@@ -99,6 +99,7 @@ let awaitingFirstAudio = false;
 // Ava may still be speaking the previous reply, so only clock audio that
 // arrives after a fresh reply.started
 let replyStarted = false;
+let discarded = 0;
 const sttSamples: number[] = [];
 const replySamples: number[] = [];
 const e2eSamples: number[] = [];
@@ -142,7 +143,12 @@ const done = new Promise<void>((resolve) => {
         userFinalAt = now;
         awaitingFirstAudio = true;
         replyStarted = false;
-        if (lastVoicedAt) sttSamples.push(Math.round(now - lastVoicedAt));
+        if (lastVoicedAt) {
+          const d = Math.round(now - lastVoicedAt);
+          // below min_silence the turn cannot really have closed: artifact
+          if (d >= TURN_DETECTION.min_silence) sttSamples.push(d);
+          else discarded++;
+        }
         console.log(`\n  USER  “${msg.text}”`);
         break;
       }
@@ -163,7 +169,10 @@ const done = new Promise<void>((resolve) => {
           replyStarted = false;
           const now = performance.now();
           if (userFinalAt) replySamples.push(Math.round(now - userFinalAt));
-          if (lastVoicedAt) e2eSamples.push(Math.round(now - lastVoicedAt));
+          if (lastVoicedAt) {
+            const d = Math.round(now - lastVoicedAt);
+            if (d >= TURN_DETECTION.min_silence) e2eSamples.push(d);
+          }
           lastVoicedAt = null; // consumed
         }
         break;
@@ -257,6 +266,7 @@ console.log("\n─── latency ───────────────�
 console.log(`transcript lock     ${stat(sttSamples)}`);
 console.log(`reason + speak      ${stat(replySamples)}`);
 console.log(`voice → voice       ${stat(e2eSamples)}`);
+console.log(`discarded samples   ${discarded} (below min_silence, unmeasurable)`);
 
 const ok = sawReady && agentAudioChunks > 0 && agentSaid.length > 0;
 console.log(ok ? "\nPASS" : "\nFAIL");
