@@ -1,0 +1,2902 @@
+<title>From PCM to Barge-in</title>
+
+<style>
+  /* ── tokens: light is the base, dark redefines only values ─────────
+     Shared with talk-prep.html so the two documents read as one set.
+     amber = the voice/audio domain · violet = the machine/code domain */
+  :root {
+    --ground: #f4f6f8;
+    --surface: #ffffff;
+    --surface-2: #eceff3;
+    --surface-3: #e3e7ec;
+    --ink: #121821;
+    --body: #39434f;
+    --muted: #6c7683;
+    --line: #dbe0e7;
+    --line-strong: #c3cad4;
+    --voice: #8f5300;
+    --voice-soft: #fdf3e2;
+    --machine: #5533b4;
+    --machine-soft: #f0ecfd;
+    --good: #1c7048;
+    --good-soft: #e8f4ee;
+    --alarm: #a5341c;
+    --alarm-soft: #fdeeea;
+
+    --sans: "Avenir Next", "Segoe UI Variable Display", "Segoe UI", system-ui,
+      -apple-system, sans-serif;
+    --serif: Charter, "Iowan Old Style", "Palatino Linotype", Palatino, Georgia,
+      serif;
+    --mono: "SF Mono", ui-monospace, "Cascadia Mono", "Roboto Mono", Menlo,
+      monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #0b0e13;
+      --surface: #141922;
+      --surface-2: #1b222c;
+      --surface-3: #222b36;
+      --ink: #e9ebef;
+      --body: #b4bcc6;
+      --muted: #868f9d;
+      --line: #252d38;
+      --line-strong: #353f4c;
+      --voice: #ffb01f;
+      --voice-soft: #2a1f08;
+      --machine: #a78bfa;
+      --machine-soft: #1e1830;
+      --good: #4ade80;
+      --good-soft: #0f2318;
+      --alarm: #ff8267;
+      --alarm-soft: #2d1512;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --ground: #0b0e13;
+    --surface: #141922;
+    --surface-2: #1b222c;
+    --surface-3: #222b36;
+    --ink: #e9ebef;
+    --body: #b4bcc6;
+    --muted: #868f9d;
+    --line: #252d38;
+    --line-strong: #353f4c;
+    --voice: #ffb01f;
+    --voice-soft: #2a1f08;
+    --machine: #a78bfa;
+    --machine-soft: #1e1830;
+    --good: #4ade80;
+    --good-soft: #0f2318;
+    --alarm: #ff8267;
+    --alarm-soft: #2d1512;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--body);
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 1060px;
+    margin: 0 auto;
+    padding: 44px 24px 110px;
+    display: flex;
+    flex-direction: column;
+    gap: 60px;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    color: var(--ink);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+    margin: 0;
+  }
+  h1 {
+    font-size: clamp(2rem, 5.4vw, 3.15rem);
+    line-height: 1.02;
+    letter-spacing: -0.035em;
+  }
+  h2 {
+    font-size: 1.4375rem;
+    line-height: 1.15;
+  }
+  h3 {
+    font-size: 1rem;
+  }
+  h4 {
+    font-size: 0.875rem;
+  }
+  p {
+    margin: 0;
+  }
+  a {
+    color: var(--machine);
+    text-decoration-thickness: 1px;
+    text-underline-offset: 2px;
+  }
+  a:focus-visible,
+  summary:focus-visible {
+    outline: 2px solid var(--machine);
+    outline-offset: 3px;
+    border-radius: 3px;
+  }
+
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .mono {
+    font-family: var(--mono);
+    font-variant-numeric: tabular-nums;
+  }
+  code {
+    font-family: var(--mono);
+    font-size: 0.8125em;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 0.5px 4px;
+    color: var(--ink);
+    word-break: break-word;
+  }
+  .prose {
+    max-width: 68ch;
+  }
+  .prose + .prose {
+    margin-top: -4px;
+  }
+
+  /* ── header ────────────────────────────────────────────────────────── */
+  header {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+  .lede {
+    font-family: var(--serif);
+    font-size: 1.1875rem;
+    line-height: 1.5;
+    color: var(--body);
+    max-width: 64ch;
+  }
+  .lede strong {
+    color: var(--ink);
+  }
+
+  .doors {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 12px;
+    margin-top: 6px;
+  }
+  .door {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-top: 3px solid var(--line-strong);
+    border-radius: 9px;
+    padding: 15px 17px;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+  }
+  .door.v {
+    border-top-color: var(--voice);
+  }
+  .door.m {
+    border-top-color: var(--machine);
+  }
+  .door h3 {
+    font-size: 0.9375rem;
+  }
+  .door .price {
+    font-family: var(--mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 1.375rem;
+    letter-spacing: -0.03em;
+    color: var(--ink);
+    line-height: 1;
+  }
+  .door .price small {
+    font-size: 0.6875rem;
+    color: var(--muted);
+    letter-spacing: 0;
+  }
+  .door p {
+    font-size: 0.8125rem;
+    line-height: 1.45;
+  }
+  .door .url {
+    font-family: var(--mono);
+    font-size: 0.6875rem;
+    color: var(--muted);
+    word-break: break-all;
+  }
+
+  /* ── contents ──────────────────────────────────────────────────────── */
+  nav.toc {
+    border-top: 1px solid var(--line-strong);
+    border-bottom: 1px solid var(--line-strong);
+    padding: 14px 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(215px, 1fr));
+    gap: 2px 22px;
+  }
+  nav.toc a {
+    display: flex;
+    gap: 10px;
+    align-items: baseline;
+    font-size: 0.8125rem;
+    text-decoration: none;
+    color: var(--body);
+    padding: 3px 0;
+  }
+  nav.toc a:hover {
+    color: var(--ink);
+  }
+  nav.toc a b {
+    font-family: var(--mono);
+    font-size: 0.6875rem;
+    color: var(--muted);
+    flex: none;
+  }
+
+  /* ── rungs ─────────────────────────────────────────────────────────── */
+  .rung {
+    display: grid;
+    grid-template-columns: 62px 1fr;
+    gap: 0 22px;
+    scroll-margin-top: 20px;
+  }
+  .rail {
+    grid-row: 1 / span 2;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+  }
+  .rail b {
+    font-family: var(--mono);
+    font-size: 1.5rem;
+    letter-spacing: -0.04em;
+    color: var(--ink);
+    line-height: 1;
+  }
+  .rail i {
+    flex: 1;
+    width: 1px;
+    background: var(--line-strong);
+    margin-right: 11px;
+    min-height: 20px;
+  }
+  .rung-head {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    border-bottom: 1px solid var(--line-strong);
+    padding-bottom: 11px;
+  }
+  .need {
+    font-size: 0.8125rem;
+    color: var(--muted);
+    max-width: 70ch;
+  }
+  .need::before {
+    content: "Why this rung";
+    font-family: var(--mono);
+    font-size: 0.5625rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-right: 9px;
+    border: 1px solid var(--line-strong);
+    border-radius: 3px;
+    padding: 1px 5px;
+    white-space: nowrap;
+  }
+  .rung-body {
+    padding-top: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    min-width: 0;
+  }
+
+  @media (max-width: 640px) {
+    .rung {
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+    .rail {
+      flex-direction: row;
+      align-items: baseline;
+      justify-content: flex-start;
+    }
+    .rail i {
+      display: none;
+    }
+  }
+
+  /* ── part dividers ─────────────────────────────────────────────────── */
+  .part {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    flex-wrap: wrap;
+    border-bottom: 2px solid var(--ink);
+    padding-bottom: 8px;
+  }
+  .part b {
+    font-family: var(--mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink);
+    border: 1px solid var(--line-strong);
+    border-radius: 3px;
+    padding: 2px 7px;
+    flex: none;
+  }
+  .part h2 {
+    font-size: 1.5rem;
+  }
+  .part p {
+    font-size: 0.8125rem;
+    color: var(--muted);
+    flex: 1 1 240px;
+  }
+
+  /* ── plain sections (reference, build order) ───────────────────────── */
+  section.flat {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    scroll-margin-top: 20px;
+  }
+  .sec-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    border-bottom: 1px solid var(--line-strong);
+    padding-bottom: 8px;
+    flex-wrap: wrap;
+  }
+  .sub-head {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 9px;
+  }
+  .sub-head .url {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    color: var(--muted);
+    word-break: break-all;
+  }
+
+  /* ── code ──────────────────────────────────────────────────────────── */
+  figure.code {
+    margin: 0;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    overflow: hidden;
+  }
+  figure.code figcaption {
+    font-family: var(--mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+    background: var(--surface-2);
+    border-bottom: 1px solid var(--line);
+    padding: 7px 14px;
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  figure.code figcaption em {
+    font-style: normal;
+    color: var(--machine);
+  }
+  figure.code pre {
+    margin: 0;
+    padding: 14px;
+    overflow-x: auto;
+    font-family: var(--mono);
+    font-size: 0.8125rem;
+    line-height: 1.55;
+    color: var(--ink);
+    tab-size: 2;
+  }
+  figure.code pre .c {
+    color: var(--muted);
+  }
+  figure.code pre .k {
+    color: var(--machine);
+  }
+  figure.code pre .s {
+    color: var(--voice);
+  }
+
+  /* ── tables ────────────────────────────────────────────────────────── */
+  .tbl {
+    overflow-x: auto;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    background: var(--surface);
+  }
+  table {
+    width: 100%;
+    min-width: 560px;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+  }
+  th {
+    text-align: left;
+    font-family: var(--mono);
+    font-size: 0.625rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 400;
+    padding: 9px 14px;
+    background: var(--surface-2);
+    border-bottom: 1px solid var(--line-strong);
+    white-space: nowrap;
+  }
+  td {
+    padding: 11px 14px;
+    border-bottom: 1px solid var(--line);
+    vertical-align: top;
+  }
+  tr:last-child td {
+    border-bottom: 0;
+  }
+  td.mono,
+  th.mono {
+    font-family: var(--mono);
+    font-size: 0.8125rem;
+    white-space: nowrap;
+    color: var(--ink);
+  }
+  td.num {
+    font-variant-numeric: tabular-nums;
+    font-family: var(--mono);
+    white-space: nowrap;
+  }
+
+  .dir {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 0.625rem;
+    letter-spacing: 0.06em;
+    padding: 1px 6px;
+    border-radius: 3px;
+    border: 1px solid var(--line-strong);
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .dir.in {
+    color: var(--machine);
+    border-color: var(--machine);
+    background: var(--machine-soft);
+  }
+  .dir.out {
+    color: var(--voice);
+    border-color: var(--voice);
+    background: var(--voice-soft);
+  }
+
+  /* ── callouts ──────────────────────────────────────────────────────── */
+  .trap,
+  .note {
+    border-radius: 9px;
+    padding: 13px 16px;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    display: flex;
+    gap: 11px;
+    align-items: baseline;
+  }
+  .trap {
+    background: var(--alarm-soft);
+    border: 1px solid var(--alarm);
+  }
+  .trap::before {
+    content: "TRAP";
+    font-family: var(--mono);
+    font-size: 0.5625rem;
+    letter-spacing: 0.14em;
+    color: var(--alarm);
+    border: 1px solid var(--alarm);
+    border-radius: 3px;
+    padding: 1px 5px;
+    flex: none;
+  }
+  .trap strong {
+    color: var(--alarm);
+  }
+  .note {
+    background: var(--good-soft);
+    border: 1px solid var(--good);
+  }
+  .note::before {
+    content: "NOTE";
+    font-family: var(--mono);
+    font-size: 0.5625rem;
+    letter-spacing: 0.14em;
+    color: var(--good);
+    border: 1px solid var(--good);
+    border-radius: 3px;
+    padding: 1px 5px;
+    flex: none;
+  }
+  .note strong {
+    color: var(--good);
+  }
+
+  /* ── numbers ───────────────────────────────────────────────────────── */
+  .nums {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(148px, 1fr));
+    gap: 11px;
+  }
+  .num-card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    padding: 13px 15px;
+  }
+  .num-card b {
+    display: block;
+    font-family: var(--mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 1.625rem;
+    letter-spacing: -0.035em;
+    color: var(--voice);
+    line-height: 1.1;
+  }
+  .num-card b small {
+    font-size: 0.6875rem;
+    color: var(--muted);
+    letter-spacing: 0;
+  }
+  .num-card.m b {
+    color: var(--machine);
+  }
+  .num-card p {
+    font-size: 0.75rem;
+    line-height: 1.4;
+    margin-top: 4px;
+  }
+
+  /* ── before / after ────────────────────────────────────────────────── */
+  .compare {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  @media (max-width: 700px) {
+    .compare {
+      grid-template-columns: 1fr;
+    }
+  }
+  .col {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+  }
+  .col > .eyebrow {
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--line);
+  }
+  .box {
+    border: 1px solid var(--line-strong);
+    border-radius: 6px;
+    padding: 8px 11px;
+    font-size: 0.8125rem;
+    background: var(--surface-2);
+    color: var(--ink);
+  }
+  .box small {
+    display: block;
+    color: var(--muted);
+    font-size: 0.6875rem;
+    font-family: var(--mono);
+  }
+  .hop {
+    font-family: var(--mono);
+    font-size: 0.625rem;
+    color: var(--alarm);
+    text-align: center;
+    letter-spacing: 0.06em;
+  }
+  .box.one {
+    background: var(--voice-soft);
+    border-color: var(--voice);
+    color: var(--voice);
+    font-weight: 600;
+    padding: 14px;
+  }
+  .box.one small {
+    color: var(--voice);
+    font-weight: 400;
+    margin-top: 3px;
+  }
+  .col .tally {
+    margin-top: auto;
+    padding-top: 10px;
+    border-top: 1px dotted var(--line-strong);
+    font-size: 0.8125rem;
+  }
+  .col .tally b {
+    color: var(--ink);
+    font-family: var(--mono);
+  }
+
+  /* ── diagram ───────────────────────────────────────────────────────── */
+  figure.dgm {
+    margin: 0;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    padding: 18px;
+    overflow-x: auto;
+  }
+  figure.dgm figcaption {
+    margin-top: 13px;
+    font-size: 0.8125rem;
+    color: var(--muted);
+    max-width: 76ch;
+  }
+  /* var() does not resolve inside SVG presentation attributes, so every fill
+     and stroke comes from a class */
+  svg.dg {
+    display: block;
+    min-width: 640px;
+    max-width: 100%;
+    height: auto;
+    margin: 0 auto;
+  }
+  svg.dg .ax {
+    stroke: var(--line-strong);
+    stroke-width: 1;
+  }
+  svg.dg .tick {
+    stroke: var(--line-strong);
+    stroke-width: 1;
+    stroke-dasharray: 2 3;
+  }
+  svg.dg .speech {
+    fill: var(--voice-soft);
+    stroke: var(--voice);
+  }
+  svg.dg .wait {
+    fill: var(--surface-2);
+    stroke: var(--line-strong);
+  }
+  svg.dg .work {
+    fill: var(--machine-soft);
+    stroke: var(--machine);
+  }
+  svg.dg .out {
+    fill: var(--voice-soft);
+    stroke: var(--voice);
+  }
+  svg.dg .burst {
+    stroke: var(--alarm);
+    stroke-width: 1.5;
+  }
+  svg.dg .brk {
+    stroke: var(--voice);
+    stroke-width: 1.5;
+    fill: none;
+  }
+  svg.dg .brk-bad {
+    stroke: var(--alarm);
+    stroke-width: 1.5;
+    fill: none;
+  }
+  svg.dg text {
+    font-family: var(--mono);
+    font-size: 11px;
+    fill: var(--body);
+  }
+  svg.dg text.hd {
+    font-size: 11.5px;
+    fill: var(--ink);
+    font-weight: 600;
+  }
+  svg.dg text.bad {
+    fill: var(--alarm);
+  }
+  svg.dg text.gd {
+    fill: var(--voice);
+  }
+  svg.dg text.mu {
+    fill: var(--muted);
+    font-size: 10px;
+  }
+  svg.dg text.arw {
+    fill: var(--muted);
+    font-size: 13px;
+  }
+  svg.dg text.mch {
+    fill: var(--machine);
+  }
+
+  /* ── ordered build list ────────────────────────────────────────────── */
+  ol.build {
+    list-style: none;
+    counter-reset: step;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    background: var(--surface);
+    overflow: hidden;
+  }
+  ol.build li {
+    counter-increment: step;
+    display: grid;
+    grid-template-columns: 42px 1fr;
+    gap: 14px;
+    padding: 12px 16px;
+    border-top: 1px solid var(--line);
+    font-size: 0.875rem;
+  }
+  ol.build li:first-child {
+    border-top: 0;
+  }
+  ol.build li::before {
+    content: counter(step, decimal-leading-zero);
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+  ol.build li strong {
+    color: var(--ink);
+  }
+  ol.build li span {
+    display: block;
+  }
+  ol.build li .how {
+    color: var(--muted);
+    font-size: 0.8125rem;
+    margin-top: 2px;
+  }
+
+  ul.plain {
+    margin: 0;
+    padding-left: 1.15em;
+    font-size: 0.9375rem;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    max-width: 70ch;
+  }
+  ul.plain li::marker {
+    color: var(--muted);
+  }
+
+  /* ── closing ───────────────────────────────────────────────────────── */
+  footer {
+    border-top: 1px solid var(--line-strong);
+    padding-top: 18px;
+    font-size: 0.8125rem;
+    color: var(--muted);
+    max-width: 74ch;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * {
+      animation: none !important;
+      transition: none !important;
+    }
+  }
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">Carvoice · build notes</p>
+    <h1>From PCM to Barge-in</h1>
+    <p class="lede">
+      Everything that sits under a real-time voice app on AssemblyAI, in the
+      order you have to learn it. Four web primitives first — the transport, the
+      bytes, the audio graph, the app shell — then thirteen rungs from raw
+      microphone samples up to tool calls and honest latency measurement. Every
+      code block is lifted from <strong>Carvoice</strong>, a working build in
+      this repo. Nothing here is pseudocode and no number is quoted from a
+      datasheet.
+    </p>
+
+    <div class="doors">
+      <div class="door v">
+        <h3>Voice Agent API</h3>
+        <p class="price">$4.50<small>&thinsp;/hr</small></p>
+        <p>
+          One socket carries your mic up and a spoken reply back. Recognition,
+          turn detection, reasoning, tool calling, barge-in and speech
+          generation are all behind it. Unified billing — that rate is
+          everything.
+        </p>
+        <p class="url">wss://agents.assemblyai.com/v1/ws</p>
+      </div>
+      <div class="door m">
+        <h3>Universal-3.5&nbsp;Pro Realtime</h3>
+        <p class="price">$0.45<small>&thinsp;/hr</small></p>
+        <p>
+          Transcription only, exactly a tenth the price. Words arrive
+          provisional and firm into immutable ones. You bring your own LLM and
+          your own voice.
+        </p>
+        <p class="url">wss://streaming.assemblyai.com/v3/ws</p>
+      </div>
+      <div class="door">
+        <h3>Async transcription</h3>
+        <p class="price">HTTP<small>&thinsp;· files</small></p>
+        <p>
+          Upload a file, poll a job, get a transcript with speaker labels and
+          summaries. Not covered here — it shares the account and the key, but
+          none of the plumbing below.
+        </p>
+        <p class="url">api.assemblyai.com/v2/transcript</p>
+      </div>
+    </div>
+  </header>
+
+  <nav class="toc" aria-label="Contents">
+    <a href="#pA"><b>A</b> Why a WebSocket</a>
+    <a href="#pB"><b>B</b> Bytes, buffers and base64</a>
+    <a href="#pC"><b>C</b> The audio graph</a>
+    <a href="#pD"><b>D</b> The app shell</a>
+    <a href="#r00"><b>00</b> The shape of the problem</a>
+    <a href="#r01"><b>01</b> Audio, mic to wire</a>
+    <a href="#r02"><b>02</b> Keys and temporary tokens</a>
+    <a href="#r03"><b>03</b> The transcription socket</a>
+    <a href="#r04"><b>04</b> Steering the model</a>
+    <a href="#r05"><b>05</b> The Voice Agent socket</a>
+    <a href="#r06"><b>06</b> Turn detection</a>
+    <a href="#r07"><b>07</b> Barge-in</a>
+    <a href="#r08"><b>08</b> Tool calling</a>
+    <a href="#r09"><b>09</b> Playback you still own</a>
+    <a href="#r10"><b>10</b> Prompting for speech</a>
+    <a href="#r11"><b>11</b> Measuring honestly</a>
+    <a href="#r12"><b>12</b> Testing without a mic</a>
+    <a href="#ref"><b>▸</b> Wire reference</a>
+    <a href="#order"><b>▸</b> Build it in this order</a>
+  </nav>
+
+  <!-- ══ part I ═══════════════════════════════════════════════════════ -->
+  <div class="part">
+    <b>Part I</b>
+    <h2>The primitives</h2>
+    <p>
+      Four browser APIs. Not AssemblyAI-specific, but every design decision
+      above them is a consequence of how these behave.
+    </p>
+  </div>
+
+  <!-- ══ A ════════════════════════════════════════════════════════════ -->
+  <section class="rung" id="pA">
+    <div class="rail"><b>A</b><i></i></div>
+    <div class="rung-head">
+      <h2>Why a WebSocket, and what one actually is</h2>
+      <p class="need">
+        Half the odd-looking decisions in this stack — token in a query string,
+        base64 audio inside JSON, two expected close codes — are WebSocket
+        constraints, not API design.
+      </p>
+    </div>
+    <div class="rung-body">
+      <h3>The basics: what problem it solves</h3>
+      <p class="prose">
+        HTTP is a question and an answer. The client asks, the server responds,
+        the exchange is over. That works perfectly for "transcribe this file" and
+        fails for a conversation on three counts at once: you need to send
+        continuously, the server needs to push you events you never asked for,
+        and the interesting moments — someone stopped talking, someone
+        interrupted — happen <em>between</em> requests, where HTTP has nothing to
+        say.
+      </p>
+      <p class="prose">
+        A WebSocket is a single TCP connection, held open, that either side can
+        write to at any time. That's the whole idea. Here is the field, and why
+        the others lose:
+      </p>
+
+      <div class="tbl">
+        <table>
+          <thead>
+            <tr>
+              <th>Transport</th>
+              <th>Shape</th>
+              <th>Why not / why</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="mono">POST per chunk</td>
+              <td>Up only, one shot</td>
+              <td>
+                A fresh request every 50&nbsp;ms — connection setup, headers and
+                a response you don't want, twenty times a second. And the server
+                still cannot push you anything.
+              </td>
+            </tr>
+            <tr>
+              <td class="mono">Long polling</td>
+              <td>Down only, faked</td>
+              <td>
+                Costs a full round trip per event and re-establishes constantly.
+                Tolerable for chat notifications, hopeless at audio rates.
+              </td>
+            </tr>
+            <tr>
+              <td class="mono">SSE / EventSource</td>
+              <td>Down only, text only</td>
+              <td>
+                Genuinely good at server push, but it is one-directional and
+                text-only — so you would still need a second channel for the
+                microphone, and binary would have to be base64'd anyway.
+              </td>
+            </tr>
+            <tr>
+              <td class="mono">WebSocket</td>
+              <td>Full duplex, ordered, text or binary</td>
+              <td>
+                One connection, both directions, message boundaries preserved,
+                a 2–14&nbsp;byte header per frame. This is what both AssemblyAI
+                real-time endpoints speak.
+              </td>
+            </tr>
+            <tr>
+              <td class="mono">WebRTC</td>
+              <td>Full duplex over UDP</td>
+              <td>
+                The right answer at telephony scale — Opus, jitter buffers,
+                packet-loss concealment. It also costs you SDP negotiation,
+                ICE/STUN/TURN and a signalling server. Enormous for this, and
+                not what these endpoints expose.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>The mechanics: handshake, frames, opcodes</h3>
+      <p class="prose">
+        A WebSocket <em>starts</em> as HTTP. The browser sends a normal GET with
+        <code>Upgrade: websocket</code> and a <code>Sec-WebSocket-Key</code>; the
+        server answers <code>101 Switching Protocols</code>; from that point the
+        connection is no longer HTTP at all. That's why a proxy or CDN in front
+        of a socket has to support upgrades explicitly, and why a corporate
+        network that inspects HTTP can kill your session at connect time with no
+        useful error.
+      </p>
+      <p class="prose">
+        After the upgrade, everything is a <strong>frame</strong>: a small header
+        plus a payload, tagged with an opcode — text (<span class="mono"
+          >0x1</span
+        >), binary (<span class="mono">0x2</span>), close (<span class="mono"
+          >0x8</span
+        >), ping/pong (<span class="mono">0x9</span>/<span class="mono">0xA</span
+        >). The browser answers pings for you, so keepalive is not your problem.
+        Ordering is guaranteed because it's one TCP stream. Delivery
+        <em>acknowledgement</em> is not — nothing tells you the server processed
+        a message. That absence is why <code>tool.result</code> has to carry the
+        <code>call_id</code> back, and why <code>session.end</code> needs a wait
+        before you close.
+      </p>
+
+      <h3>Text frames vs binary frames — the fork in this whole stack</h3>
+      <p class="prose">
+        This is the single most useful thing to understand, because it explains
+        why the two AssemblyAI endpoints want audio in different shapes and why
+        that's not an inconsistency.
+      </p>
+      <p class="prose">
+        JSON is text, and text frames cannot hold arbitrary bytes. So the moment
+        you decide "my protocol is JSON messages", audio has to be encoded into
+        something text-safe — base64 — which costs 33% bandwidth and a copy. The
+        Voice Agent socket multiplexes eighteen different message types in both
+        directions, so it <em>needs</em> a self-describing envelope, and pays that
+        price. The transcription socket carries exactly one thing upward, so it
+        skips the envelope entirely and sends raw binary frames.
+      </p>
+
+      <figure class="dgm">
+        <svg class="dg" viewBox="0 0 800 190" role="img" aria-labelledby="fr-t">
+          <title id="fr-t">
+            The Voice Agent socket turns 2400 bytes of PCM into a 3240-byte JSON
+            text frame via base64, a 33% overhead. The transcription socket sends
+            1600 bytes of PCM as a 1600-byte binary frame with no encoding step.
+          </title>
+
+          <text class="hd" x="8" y="20">
+            Voice Agent API — eighteen message types on one socket
+          </text>
+          <rect class="wait" x="8" y="32" width="150" height="34" rx="4" />
+          <text x="20" y="53">PCM16 · 2400 B</text>
+          <text class="arw" x="166" y="54">→</text>
+          <rect class="speech" x="186" y="32" width="196" height="34" rx="4" />
+          <text x="198" y="53">base64 · 3200 chars</text>
+          <text class="arw" x="392" y="54">→</text>
+          <rect class="speech" x="414" y="32" width="266" height="34" rx="4" />
+          <text x="426" y="53">JSON text frame · 3240 B</text>
+          <text class="gd" x="694" y="53">+33%</text>
+
+          <text class="hd" x="8" y="100">
+            Universal-3.5 Pro Realtime — audio only, upward
+          </text>
+          <rect class="wait" x="8" y="112" width="150" height="34" rx="4" />
+          <text x="20" y="133">PCM16 · 1600 B</text>
+          <text class="arw" x="166" y="134">→</text>
+          <rect class="work" x="186" y="112" width="266" height="34" rx="4" />
+          <text x="198" y="133">binary frame · 1600 B</text>
+          <text class="mch" x="466" y="133">no encoding, no copy</text>
+
+          <text class="mu" x="8" y="176">
+            50 ms of mono audio in each case · 24 kHz above, 16 kHz below
+          </text>
+        </svg>
+        <figcaption>
+          Same account, same key, different envelope. The overhead buys
+          multiplexing: one connection that carries audio, transcripts, tool
+          calls and lifecycle events without you demultiplexing anything
+          yourself.
+        </figcaption>
+      </figure>
+
+      <div class="trap">
+        <span
+          ><strong><code>binaryType</code> defaults to <code>"blob"</code>.</strong>
+          A Blob is read asynchronously, so if you forget
+          <code>sock.binaryType = "arraybuffer"</code> your handler receives an
+          object your <code>JSON.parse</code> chokes on — and if that parse sits
+          in a <code>try/catch</code> that returns early, as it does in both
+          hooks here, you get <em>no error at all</em>.</span
+        >
+      </div>
+
+      <h3>The advanced bits you will actually hit</h3>
+      <ul class="plain">
+        <li>
+          <strong>No headers.</strong> The <code>WebSocket</code> constructor
+          takes a URL and an optional subprotocol list. There is no way to set
+          <code>Authorization</code>. That single limitation is the entire reason
+          rung 02 exists.
+        </li>
+        <li>
+          <strong><code>readyState</code> is not optional to check.</strong>
+          <span class="mono"
+            >CONNECTING&nbsp;0 · OPEN&nbsp;1 · CLOSING&nbsp;2 ·
+            CLOSED&nbsp;3</span
+          >. Calling <code>send()</code> when it isn't <code>OPEN</code> throws —
+          and your mic worklet is firing twenty times a second, including during
+          teardown. Every send path in this codebase is guarded.
+        </li>
+        <li>
+          <strong>Backpressure is visible and you should look at it.</strong>
+          <code>bufferedAmount</code> is how many bytes are queued but not yet on
+          the wire. Push 256–384&nbsp;kbps into an uplink that can't take it and
+          that number climbs forever while your latency drifts out. The right
+          response for audio is to <em>drop</em> chunks, not queue them — a
+          200&nbsp;ms-old microphone sample has no value.
+        </li>
+        <li>
+          <strong>Close codes tell you what happened.</strong>
+          <span class="mono">1000</span> normal;
+          <span class="mono">1005</span> no status received, which is what a
+          clean browser-side close looks like; <span class="mono">1006</span>
+          abnormal — no close frame arrived, meaning the network died rather than
+          the peer hanging up. Treat 1000 and 1005 as expected and everything
+          else as an error, which is exactly what
+          <code>sock.onclose</code> does here.
+        </li>
+        <li>
+          <strong>There is no automatic reconnect</strong> — and for a voice
+          session, reconnecting is not resuming. Session state lives on the
+          server, so a new socket is a new session, a new token and a new billing
+          period. Design the UX around "the call dropped", not "retrying".
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ══ B ════════════════════════════════════════════════════════════ -->
+  <section class="rung" id="pB">
+    <div class="rail"><b>B</b><i></i></div>
+    <div class="rung-head">
+      <h2>Bytes, buffers and base64</h2>
+      <p class="need">
+        Audio is the one place in web development where you manipulate raw
+        memory. The type system here is unfamiliar and unforgiving.
+      </p>
+    </div>
+    <div class="rung-body">
+      <h3>The basics: a buffer and a lens</h3>
+      <p class="prose">
+        An <code>ArrayBuffer</code> is a fixed-size block of raw bytes with no
+        interpretation — you cannot read it directly. A <strong>typed array</strong>
+        is a <em>view</em> onto those bytes that assigns them a meaning:
+        <code>Int16Array</code> reads them as signed 16-bit integers,
+        <code>Float32Array</code> as 32-bit floats. Same memory, different lens.
+      </p>
+      <p class="prose">
+        Audio work is a conversion between exactly two of those lenses.
+        <code>Float32Array</code> in the range −1…1 is what Web Audio speaks;
+        <code>Int16Array</code> in the range −32768…32767 is what the wire
+        speaks. Rung 01 is that conversion and nothing else.
+      </p>
+      <ul class="plain">
+        <li>
+          <strong>Views share memory.</strong> Two views over one buffer see each
+          other's writes. Useful, and a footgun — <code>.subarray()</code> gives
+          you another view, <code>.slice()</code> gives you a copy. Reach for the
+          wrong one and you either pay for pointless copies or mutate something
+          you thought you owned.
+        </li>
+        <li>
+          <strong>Endianness</strong> is why the parameter is spelled
+          <code>pcm_s16le</code> — signed 16-bit little-endian. Typed arrays use
+          the platform's byte order, and every browser platform you will meet is
+          little-endian, so it lines up for free. <code>DataView</code> is how
+          you'd be explicit if you ever needed to be.
+        </li>
+        <li>
+          <strong>Transfer, don't clone.</strong>
+          <code>port.postMessage(buf, [buf])</code> — that second argument moves
+          ownership of the buffer to the receiver instead of structured-cloning
+          it. The sender's buffer becomes detached, with
+          <code>byteLength&nbsp;0</code>. At twenty chunks a second, this is the
+          difference between zero copies and twenty copies per second on the
+          audio path.
+        </li>
+      </ul>
+
+      <h3>base64, and the stack overflow waiting for you</h3>
+      <p class="prose">
+        base64 turns every 3 bytes into 4 ASCII characters — hence the
+        <span class="mono">+33%</span> on the Voice Agent path. In the browser
+        the encoder is <code>btoa</code>, which takes a <em>string</em>, so the
+        route is bytes → latin1 string → base64. The obvious way to build that
+        string is <code>String.fromCharCode(...bytes)</code>, and it works right
+        up until the array is big enough that spreading it exceeds the argument
+        limit, at which point it throws <em>Maximum call stack size exceeded</em>
+        on what looks like a pure data operation.
+      </p>
+
+      <figure class="code">
+        <figcaption>
+          <span>lib/audio.ts</span><em>chunked so it cannot blow the stack</em>
+        </figcaption>
+        <pre>export function int16ToBase64(buf: ArrayBuffer): string {
+  const bytes = new Uint8Array(buf);   <span class="c">// a byte-level lens on the same memory</span>
+  let s = <span class="s">""</span>;
+  const CHUNK = 0x8000;                <span class="c">// 32768 args per spread — safely under the limit</span>
+  for (let i = 0; i &lt; bytes.length; i += CHUNK) {
+    s += String.fromCharCode(...bytes.subarray(i, i + CHUNK));
+  }
+  return btoa(s);
+}
+
+<span class="c">// and back, for the agent's reply audio</span>
+export function base64ToInt16(b64: string): Int16Array {
+  const bin = atob(b64);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i &lt; bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  <span class="c">// re-lens the SAME bytes as 16-bit samples — no second allocation</span>
+  return new Int16Array(
+    bytes.buffer,
+    bytes.byteOffset,
+    Math.floor(bytes.byteLength / 2),
+  );
+}</pre>
+      </figure>
+
+      <p class="prose">
+        One more piece of vocabulary you need for rung 11:
+        <strong>RMS</strong>, root-mean-square. Square every sample, average
+        them, square-root the result — that gives you the signal's effective
+        loudness in one number, unlike a peak which any single click can spike.
+        Over normalised samples it lands in 0…1, and a threshold around
+        <span class="mono">0.015</span> separates speech from room noise. That is
+        the entire voice-activity detector this project uses, and it is enough.
+      </p>
+    </div>
+  </section>
+
+  <!-- ══ C ════════════════════════════════════════════════════════════ -->
+  <section class="rung" id="pC">
+    <div class="rail"><b>C</b><i></i></div>
+    <div class="rung-head">
+      <h2>The audio graph, and a second clock</h2>
+      <p class="need">
+        Web Audio doesn't run on your thread or your clock. Both of those
+        surprises cause bugs that look like API problems.
+      </p>
+    </div>
+    <div class="rung-body">
+      <h3>The basics: nodes, pulled from the hardware end</h3>
+      <p class="prose">
+        Web Audio is a graph. Sources (a microphone stream, a buffer of samples)
+        connect to processing nodes, which connect to
+        <code>ctx.destination</code> — the speakers. The crucial inversion: the
+        graph is <em>pulled</em> by the audio hardware asking for the next block
+        of samples, not pushed by your code. You describe the graph; the hardware
+        drives it.
+      </p>
+      <p class="prose">
+        <code>getUserMedia</code> hands you a <code>MediaStream</code> to plug in
+        at the source end. Its constraints —
+        <code>echoCancellation</code>, <code>noiseSuppression</code>,
+        <code>autoGainControl</code>, <code>channelCount</code> — are
+        <em>requests</em> to the OS audio pipeline, not guarantees. If a value
+        matters to you, read it back with <code>track.getSettings()</code> rather
+        than assuming you got it. This is also the layer where the headphones
+        problem in rung 07 lives: echo cancellation is a best-effort DSP filter,
+        not a promise.
+      </p>
+
+      <h3>Two clocks, and never mixing them</h3>
+      <div class="tbl">
+        <table>
+          <thead>
+            <tr>
+              <th class="mono">clock</th>
+              <th>Unit</th>
+              <th>What it's for</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="mono">performance.now()</td>
+              <td>milliseconds</td>
+              <td>
+                The page's monotonic clock. Every latency measurement in rung 11
+                is taken on this one. Monotonic matters —
+                <code>Date.now()</code> can step backwards when the system clock
+                syncs.
+              </td>
+            </tr>
+            <tr>
+              <td class="mono">ctx.currentTime</td>
+              <td>seconds</td>
+              <td>
+                The audio hardware's clock. Advances in 128-sample blocks and is
+                the <em>only</em> clock that can schedule sound. Rung 09's
+                <code>nextTime</code> cursor lives here.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="prose">
+        Different origins, different units, different resolutions. Mixing them —
+        scheduling audio from a <code>performance.now()</code> value, or timing
+        latency from <code>currentTime</code> — produces numbers that are wrong
+        by an amount that looks plausible, which is the worst kind of wrong.
+      </p>
+
+      <h3>The audio thread: a 2.7 ms budget with no exceptions</h3>
+      <p class="prose">
+        An <code>AudioWorkletProcessor.process()</code> runs on a real-time
+        thread and is called every 128 samples — about
+        <span class="mono">2.7&nbsp;ms</span> at 48&nbsp;kHz. Inside it there is
+        no DOM, no <code>await</code>, no React, and no room for allocation you
+        can avoid. Miss the deadline and you don't get an exception, you get a
+        glitch. That's the whole case for the worklet over the deprecated
+        <code>ScriptProcessorNode</code>, which ran on the main thread and
+        dropped buffers whenever a component re-rendered.
+      </p>
+      <ul class="plain">
+        <li>
+          <strong><code>sampleRate</code> is a global inside worklet scope</strong>
+          — the real rate the context got, not the one you asked for. Safari
+          ignores <code>new AudioContext({ sampleRate })</code> silently, so
+          computing your resample ratio from this global rather than from your
+          own constant is the difference between working and chipmunks.
+        </li>
+        <li>
+          <strong><code>numberOfOutputs: 0</code> makes the node a pure sink.</strong>
+          The capture worklet reads the mic and posts bytes to the main thread;
+          it must not be connected to <code>destination</code>, or you route the
+          microphone straight to the speakers and manufacture feedback.
+        </li>
+        <li>
+          <strong>Autoplay policy will silence your first session.</strong> An
+          <code>AudioContext</code> created outside a user gesture starts in
+          <code>suspended</code> state — everything you schedule plays to nobody
+          and nothing throws. Create it inside the click handler, or
+          <code>resume()</code> it there.
+        </li>
+        <li>
+          <strong>Teardown is four separate things:</strong> close the worklet
+          port, disconnect the node, stop every
+          <code>MediaStreamTrack</code> (this is what turns the browser's
+          recording indicator off), then close the context. Skip the track stops
+          and the mic stays hot after the call ends.
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ══ D ════════════════════════════════════════════════════════════ -->
+  <section class="rung" id="pD">
+    <div class="rail"><b>D</b><i></i></div>
+    <div class="rung-head">
+      <h2>The app shell: server boundary, and refs vs state</h2>
+      <p class="need">
+        Two React facts decide whether your socket handler sees current data or
+        data frozen at connect time. This is the most confusing bug class in the
+        whole build.
+      </p>
+    </div>
+    <div class="rung-body">
+      <h3>Where the server ends</h3>
+      <p class="prose">
+        Next.js gives you exactly one thing you need here: a route handler that
+        runs on the server, so the API key can live in
+        <code>process.env</code> and never reach the browser. The boundary is a
+        naming convention, and it is worth being blunt about how thin it is —
+        <code>ASSEMBLYAI_API_KEY</code> stays server-side;
+        anything prefixed <code>NEXT_PUBLIC_</code> is inlined into the client
+        bundle at build time. Nothing checks your intent. Rename a variable
+        carelessly and you have published your key.
+      </p>
+      <p class="prose">
+        The counterpart is <code>"use client"</code> at the top of both hooks.
+        They touch <code>navigator.mediaDevices</code>,
+        <code>AudioContext</code> and <code>WebSocket</code> — none of which
+        exist on the server — so they cannot be server components. Everything
+        real-time is client code; the server's entire job is minting a token.
+      </p>
+
+      <h3>Refs vs state, and why the split is load-bearing</h3>
+      <p class="prose">
+        A <code>useState</code> value triggers a re-render when it changes. A
+        <code>useRef</code> does not. That difference sounds like a performance
+        detail and is actually a correctness one, because of closures: your
+        <code>sock.onmessage</code> handler is created once and captures the
+        variables that existed at that moment. Read a state value inside it and
+        you read the value from when the socket opened — forever.
+      </p>
+      <p class="prose">
+        So the split is mechanical. Anything the handler must see
+        <em>currently</em> goes in a ref: the socket, the audio context, the
+        player, the latency timestamps, the tool runner, and the caller's effects
+        object. Anything the UI draws goes in state. Get it backwards and you
+        build something that works on the first turn and silently uses stale data
+        on every turn after — which reads exactly like an API bug.
+      </p>
+
+      <figure class="code">
+        <figcaption>
+          <span>lib/useVoiceAgent.ts</span><em>the pattern that saves you</em>
+        </figcaption>
+        <pre><span class="c">// effects can change identity between renders; keep the latest in a ref so</span>
+<span class="c">// the socket handler never closes over a stale copy</span>
+const fx = useRef(effects);
+useEffect(() =&gt; {
+  fx.current = effects;
+}, [effects]);
+
+<span class="c">// …and inside onmessage, always reach through .current</span>
+callTool.current(name, args, fx.current);</pre>
+      </figure>
+
+      <ul class="plain">
+        <li>
+          <strong>Update state functionally on hot paths.</strong>
+          <code>setMetrics(m =&gt; ({ ...m, e2eMs }))</code> rather than
+          <code>setMetrics({ ...metrics, e2eMs })</code>. The second form reads a
+          captured <code>metrics</code> and will clobber concurrent updates from
+          the other twenty messages arriving this second.
+        </li>
+        <li>
+          <strong>Twenty messages a second is twenty renders a second</strong> if
+          you naively put each one in state. <code>reply.audio</code> dominates
+          the feed — count it, don't log it, and cap any debug list you keep
+          (this one holds the last 90 wire events).
+        </li>
+        <li>
+          <strong>The <code>useEffect</code> cleanup is a billing control.</strong>
+          Return a teardown that closes the socket, stops the tracks and closes
+          the context. Without it, a hot reload during development leaves a live
+          session running at $4.50/hr and a microphone open.
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ══ part II ══════════════════════════════════════════════════════ -->
+  <div class="part">
+    <b>Part II</b>
+    <h2>The ladder</h2>
+    <p>
+      Thirteen rungs. Each one is verifiable before the next, and the build order
+      at the end follows them.
+    </p>
+  </div>
+
+  <!-- ══ 00 ═══════════════════════════════════════════════════════════ -->
+  <section class="rung" id="r00">
+    <div class="rail"><b>00</b><i></i></div>
+    <div class="rung-head">
+      <h2>The shape of the problem</h2>
+      <p class="need">
+        Every wrong turn later starts here: treating a conversation like a
+        request. It isn't one.
+      </p>
+    </div>
+    <div class="rung-body">
+      <p class="prose">
+        Part I covered why the transport is a socket. The consequence for your
+        code is that the unit of work is a <strong>turn</strong>, not a response:
+        nothing you send has a matching reply, and every interesting event
+        arrives unsolicited. Your whole client is one
+        <code>switch</code> over message types plus some state.
+      </p>
+      <p class="prose">
+        The second thing to internalise: what you get for the money is the
+        <em>middle</em> of the pipeline. Building this yourself means five
+        network hops between four vendors, each with its own auth, its own audio
+        format and its own failure mode — and you own the latency of all of it.
+      </p>
+
+      <div class="compare">
+        <div class="col">
+          <p class="eyebrow">Assembled yourself</p>
+          <div class="box">Mic capture &amp; encoding<small>you</small></div>
+          <p class="hop">↓ hop</p>
+          <div class="box">Streaming STT vendor<small>vendor 1</small></div>
+          <p class="hop">↓ hop</p>
+          <div class="box">
+            VAD / endpointing — when did they stop?<small>you, badly</small>
+          </div>
+          <p class="hop">↓ hop</p>
+          <div class="box">LLM + tool-call loop<small>vendor 2</small></div>
+          <p class="hop">↓ hop</p>
+          <div class="box">TTS<small>vendor 3</small></div>
+          <p class="hop">↓ hop</p>
+          <div class="box">
+            Playback, queueing, interrupt handling<small>you</small>
+          </div>
+          <p class="tally">
+            <b>3</b> vendors, <b>5</b> hops, <b>3</b> billing meters, and
+            interruption is a distributed-systems problem you solve yourself.
+          </p>
+        </div>
+        <div class="col">
+          <p class="eyebrow">Voice Agent API</p>
+          <div class="box">Mic capture &amp; encoding<small>you</small></div>
+          <p class="hop">↓ one socket</p>
+          <div class="box one">
+            STT · turn detection · LLM · tool calling · TTS · barge-in
+            <small>agents.assemblyai.com</small>
+          </div>
+          <p class="hop">↓ same socket</p>
+          <div class="box">
+            Playback and queue clearing<small>you</small>
+          </div>
+          <p class="tally">
+            <b>1</b> vendor, <b>1</b> hop, <b>1</b> meter. You still own the two
+            ends — mic in, speaker out — and rungs 01 and 09 are entirely about
+            those.
+          </p>
+        </div>
+      </div>
+
+      <p class="prose">
+        Rungs 01–02 are the ends you keep either way. Rungs 03–04 are the cheap
+        API. Rungs 05–10 are the agent. Rungs 11–12 are how you find out whether
+        any of it actually works.
+      </p>
+    </div>
+  </section>
+
+  <!-- ══ 01 ═══════════════════════════════════════════════════════════ -->
+  <section class="rung" id="r01">
+    <div class="rail"><b>01</b><i></i></div>
+    <div class="rung-head">
+      <h2>Audio, from the mic to the wire</h2>
+      <p class="need">
+        Both APIs want PCM16. The browser does not give you PCM16. Almost every
+        "it connects but nothing happens" bug lives in the gap.
+      </p>
+    </div>
+    <div class="rung-body">
+      <p class="prose">
+        <code>getUserMedia</code> hands you an audio graph of 32-bit floats in
+        the range −1…1, at whatever rate the hardware chose — usually 48&nbsp;kHz
+        on a laptop. What goes on the wire is <strong>PCM16</strong>: signed
+        16-bit integers, little-endian, mono, at a rate the server expects. Four
+        conversions, in this order:
+      </p>
+      <ul class="plain">
+        <li>
+          <strong>Resample</strong> 48&nbsp;kHz → the target rate. Linear
+          interpolation between neighbouring samples is enough for speech.
+        </li>
+        <li>
+          <strong>Clamp</strong> to −1…1 before scaling, or a sample that
+          overshoots wraps around and becomes a click.
+        </li>
+        <li>
+          <strong>Scale asymmetrically</strong>: negatives by 32768, positives
+          by 32767. Int16 is not symmetric and using 32768 for both clips the
+          loudest positive peak.
+        </li>
+        <li>
+          <strong>Chunk</strong> to a fixed size. 50&nbsp;ms is the sweet spot —
+          1200 samples at 24&nbsp;kHz, 800 at 16&nbsp;kHz. Smaller chunks buy
+          nothing but syscalls; bigger ones add latency you cannot get back.
+        </li>
+      </ul>
+      <p class="prose">
+        All four happen inside the <code>AudioWorklet</code>, for the reasons in
+        primitive C — it's the only place with a hard real-time guarantee, and it
+        reaches you through <code>port.postMessage</code> alone.
+      </p>
+
+      <figure class="code">
+        <figcaption>
+          <span>public/pcm-worklet.js</span><em>the whole resampler</em>
+        </figcaption>
+        <pre><span class="c">// the ratio comes from the worklet's REAL sampleRate — Safari silently</span>
+<span class="c">// ignores new AudioContext({ sampleRate }), so never assume it is 1</span>
+this.ratio = sampleRate / this.targetRate;
+
+let p = this.pos;
+while (Math.floor(p) + 1 &lt; merged.length) {
+  const i = Math.floor(p);
+  const frac = p - i;
+  let s = merged[i] * (1 - frac) + merged[i + 1] * frac;
+  if (s &gt; 1) s = 1;
+  else if (s &lt; -1) s = -1;
+  this.out[this.outIdx++] = s &lt; 0 ? s * 0x8000 : s * 0x7fff;
+
+  if (this.outIdx === this.chunkSamples) {
+    const copy = this.out.slice(0);
+    this.port.postMessage(copy.buffer, [copy.buffer]);  <span class="c">// transfer, don't clone</span>
+    this.outIdx = 0;
+  }
+  p += this.ratio;
+}
+<span class="c">// keep the fractional read position and the unconsumed tail across calls,</span>
+<span class="c">// or you get a click at every 128-sample block boundary</span>
+this.tail = merged.slice(Math.floor(p));
+this.pos = p - Math.floor(p);</pre>
+      </figure>
+
+      <p class="prose">
+        Know the bandwidth you are committing to, because it is fixed and
+        unavoidable: <span class="mono">16000 × 2 bytes × 8 = 256&nbsp;kbps</span>
+        upstream at 16&nbsp;kHz, 384&nbsp;kbps at 24&nbsp;kHz. There is no
+        compression on this path. Venue wifi is the thing that breaks a demo,
+        not the API.
+      </p>
+
+      <div class="trap">
+        <span
+          ><strong>The two endpoints want different audio shapes.</strong> Voice
+          Agent takes base64 PCM16 inside a JSON message at 24&nbsp;kHz; the
+          transcription endpoint takes raw binary frames at 16&nbsp;kHz. Send
+          the wrong one and you get <em>silence, not an error</em> — the socket
+          stays open, the session bills, and you debug for an hour.</span
+        >
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ 02 ═══════════════════════════════════════════════════════════ -->
+  <section class="rung" id="r02">
+    <div class="rail"><b>02</b><i></i></div>
+    <div class="rung-head">
+      <h2>Keys and temporary tokens</h2>
+      <p class="need">
+        A browser WebSocket cannot set an <code>Authorization</code> header. If
+        you don't know that, you will ship your API key to the client.
+      </p>
+    </div>
+    <div class="rung-body">
+      <p class="prose">
+        The <code>WebSocket</code> constructor takes a URL and nothing else — no
+        headers. So authentication moves into the query string, which means the
+        thing in the query string must not be your account key. Both APIs mint
+        <strong>short-lived tokens</strong> over HTTP for exactly this. The
+        pattern is one server route per endpoint: the key stays in
+        <code>process.env</code> on the server, the browser gets a token good
+        for five minutes.
+      </p>
+
+      <figure class="code">
+        <figcaption>
+          <span>app/api/agent-token/route.ts</span><em>server-only</em>
+        </figcaption>
+        <pre>const url = new URL(<span class="s">"https://agents.assemblyai.com/v1/token"</span>);
+url.searchParams.set(<span class="s">"expires_in_seconds"</span>, <span class="s">"300"</span>);          <span class="c">// window to connect</span>
+url.searchParams.set(<span class="s">"max_session_duration_seconds"</span>, <span class="s">"1800"</span>); <span class="c">// cap on the call</span>
+
+const res = await fetch(url, {
+  headers: { Authorization: `Bearer ${key}` },   <span class="c">// agents: Bearer prefix</span>
+  cache: <span class="s">"no-store"</span>,
+});
+const { token } = await res.json();</pre>
+      </figure>
+
+      <div class="trap">
+        <span
+          ><strong>The two token endpoints disagree about the header.</strong>
+          <code>agents.assemblyai.com/v1/token</code> wants
+          <code>Authorization: Bearer &lt;key&gt;</code>.
+          <code>streaming.assemblyai.com/v3/token</code> wants the raw key with
+          <em>no</em> <code>Bearer</code> prefix. Copying one route to make the
+          other is the single most common 401 in this codebase's history.</span
+        >
+      </div>
+
+      <p class="prose">
+        Two parameters, two different jobs.
+        <code>expires_in_seconds</code> is how long the token may be
+        <em>used to connect</em> — 300 is generous; the browser redeems it
+        immediately. <code>max_session_duration_seconds</code> is a ceiling on
+        the resulting call, which is your runaway-cost guard: at $4.50/hr an
+        abandoned tab is $0.075 a minute forever. Set it.
+      </p>
+      <p class="prose">
+        Mint a fresh token on every session start with
+        <code>cache: "no-store"</code> on both the outbound fetch and your own
+        route's response. A cached token is an expired token.
+      </p>
+    </div>
+  </section>
+
+  <!-- ══ 03 ═══════════════════════════════════════════════════════════ -->
+  <section class="rung" id="r03">
+    <div class="rail"><b>03</b><i></i></div>
+    <div class="rung-head">
+      <h2>The transcription socket</h2>
+      <p class="need">
+        Learn this one first even if you only want the agent. It is the same
+        recognition engine with the lid off, and it costs a tenth as much to
+        experiment on.
+      </p>
+    </div>
+    <div class="rung-body">
+      <p class="prose">
+        Universal-3.5&nbsp;Pro Realtime is configured <strong>entirely in the
+        connection URL</strong> — there is no setup message. You build the URL,
+        open it, and start pushing raw bytes.
+      </p>
+
+      <figure class="code">
+        <figcaption>
+          <span>lib/useStreaming.ts</span><em>configuration is the URL</em>
+        </figcaption>
+        <pre>const url = new URL(<span class="s">"wss://streaming.assemblyai.com/v3/ws"</span>);
+url.searchParams.set(<span class="s">"token"</span>, token);
+url.searchParams.set(<span class="s">"speech_model"</span>, <span class="s">"universal-3-5-pro"</span>);
+url.searchParams.set(<span class="s">"sample_rate"</span>, <span class="s">"16000"</span>);
+url.searchParams.set(<span class="s">"encoding"</span>, <span class="s">"pcm_s16le"</span>);
+url.searchParams.set(<span class="s">"format_turns"</span>, <span class="s">"true"</span>);   <span class="c">// punctuation + casing on finals</span>
+url.searchParams.set(<span class="s">"mode"</span>, <span class="s">"balanced"</span>);
+
+const sock = new WebSocket(url);
+sock.binaryType = <span class="s">"arraybuffer"</span>;   <span class="c">// this endpoint speaks raw frames</span>
+<span class="c">// …later, per 50ms chunk:</span>
+sock.send(e.data);                <span class="c">// an ArrayBuffer. No JSON, no base64.</span></pre>
+      </figure>
+
+      <p class="prose">
+        Three message types come back: <code>Begin</code> once,
+        <code>Turn</code> many times, <code>Termination</code> once. Wait for
+        <code>Begin</code> before you start sending audio — anything you push
+        before the session exists is thrown away. <code>SpeechStarted</code>
+        also arrives when the server first hears voice.
+      </p>
+
+      <h3>The immutability model — the thing that makes this feel fast</h3>
+      <p class="prose">
+        Every <code>Turn</code> message carries the whole turn so far as a
+        <code>words[]</code> array, and each word has
+        <code>word_is_final</code>. A word that is final will never change
+        again; a word that isn't may be revised by the next message. That is the
+        contract you render against: draw the immutable prefix in your normal
+        text colour and let the tail flicker. Users read the committed part and
+        never notice the churn.
+      </p>
+
+      <figure class="code">
+        <figcaption>
+          <span>lib/useStreaming.ts</span><em>per-word finality and confidence</em>
+        </figcaption>
+        <pre><span class="k">case</span> <span class="s">"Turn"</span>: {
+  const mapped = (msg.words ?? []).map((w) =&gt; ({
+    text: w.text,
+    final: Boolean(w.word_is_final),   <span class="c">// never revised again</span>
+    confidence: w.confidence ?? 0,     <span class="c">// per word, 0…1</span>
+  }));
+  setWords(mapped);
+
+  <span class="c">// a turn lands TWICE: once raw, then again formatted.</span>
+  <span class="c">// only the second one is worth keeping.</span>
+  if (msg.end_of_turn &amp;&amp; msg.turn_is_formatted) {
+    commit(String(msg.transcript), Number(msg.end_of_turn_confidence));
+  }
+  break;
+}</pre>
+      </figure>
+
+      <p class="prose">
+        <code>turn_order</code> is your key for grouping partials — it increments
+        per turn, so you can count how many partials a turn took before it
+        settled. <code>end_of_turn_confidence</code> is the model's own
+        confidence that the speaker actually finished, which is the number to
+        watch when someone trails off mid-sentence.
+      </p>
+      <p class="prose">
+        Close politely: send <code>{"type":"Terminate"}</code>, give it a beat,
+        then <code>close()</code>. You'll get a <code>Termination</code> back.
+      </p>
+    </div>
+  </section>
+
+  <!-- ══ 04 ═══════════════════════════════════════════════════════════ -->
+  <section class="rung" id="r04">
+    <div class="rail"><b>04</b><i></i></div>
+    <div class="rung-head">
+      <h2>Steering the model</h2>
+      <p class="need">
+        Accuracy on your domain's vocabulary is a configuration problem, not a
+        model problem. Four parameters do most of the work.
+      </p>
+    </div>
+    <div class="rung-body">
+      <p class="prose">
+        Universal-3.5&nbsp;Pro is a <strong>promptable</strong> speech model.
+        That word means something specific and it is easy to get wrong.
+      </p>
+
+      <div class="tbl">
+        <table>
+          <thead>
+            <tr>
+              <th class="mono">param</th>
+              <th>What it actually does</th>
+              <th>Getting it right</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="mono">prompt</td>
+              <td>
+                Carries <em>context about the audio</em> — its domain, topic or
+                scenario — so the model expects the vocabulary that context
+                makes likely.
+              </td>
+              <td>
+                One imperative sentence naming the scenario. Not a formatting
+                instruction, not a paragraph. Universal-3.5&nbsp;Pro only,
+                1750&nbsp;char max.
+              </td>
+            </tr>
+            <tr>
+              <td class="mono">keyterms_prompt</td>
+              <td>
+                Boosts specific strings — product names, proper nouns,
+                initialisms — so they land on the first pass.
+              </td>
+              <td>
+                A JSON array of exact terms. Keep it to the words that actually
+                matter; it is not a dictionary dump.
+              </td>
+            </tr>
+            <tr>
+              <td class="mono">voice_focus</td>
+              <td>
+                Isolates the primary voice and suppresses background noise
+                <em>before</em> transcription.
+              </td>
+              <td>
+                <code>near-field</code> for headsets and phones,
+                <code>far-field</code> for conference rooms and drive-thrus.
+                Plus <code>voice_focus_threshold</code> 0.0–1.0, default 0.7.
+              </td>
+            </tr>
+            <tr>
+              <td class="mono">agent_context</td>
+              <td>
+                Feeds your agent's spoken replies back in as conversation
+                context, so the model knows what was just said to the user.
+              </td>
+              <td>
+                On by default with a configurable depth of previous turns. The
+                published default count is inconsistent between the API
+                reference and AssemblyAI's own talks — don't hard-code a belief
+                about it, set it explicitly.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <figure class="code">
+        <figcaption>
+          <span>lib/agent.ts</span><em>the whole prompt, deliberately</em>
+        </figcaption>
+        <pre>export const STREAM_PROMPT =
+  <span class="s">"Transcribe this call between a customer and a used-car dealership, "</span> +
+  <span class="s">"covering vehicle trims, monthly payments, APR and test drive bookings."</span>;
+
+export const VOICE_FOCUS = { mode: <span class="s">"near-field"</span>, threshold: 0.7 };
+
+export const KEYTERMS = [
+  <span class="s">"Carvoice"</span>, <span class="s">"Tesla Model 3"</span>, <span class="s">"Rivian R1T"</span>, <span class="s">"Long Range"</span>,
+  <span class="s">"Quad-Motor"</span>, <span class="s">"APR"</span>, <span class="s">"down payment"</span>, <span class="s">"test drive"</span>, <span class="s">"trade-in"</span>,
+];</pre>
+      </figure>
+
+      <div class="note">
+        <span
+          ><strong>Why agent context is make-or-break.</strong> AssemblyAI's own
+          example: a user answering "C" gets heard as Spanish <em>"sí"</em> by a
+          multilingual model. If the model knows the agent just asked "A, B or
+          C?", it resolves correctly. 19 languages with native code switching
+          means every session is effectively multilingual — so every session has
+          this failure mode.</span
+        >
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ 05 ═══════════════════════════════════════════════════════════ -->
+  <section class="rung" id="r05">
+    <div class="rail"><b>05</b><i></i></div>
+    <div class="rung-head">
+      <h2>The Voice Agent socket</h2>
+      <p class="need">
+        One connection, six responsibilities. Everything is a JSON message —
+        including the audio, in both directions.
+      </p>
+    </div>
+    <div class="rung-body">
+      <p class="prose">
+        Unlike the transcription endpoint, the agent socket takes only the token
+        in its URL. Configuration is the first message you send:
+        <code>session.update</code>, which carries the prompt, the greeting, the
+        voice, the audio formats, turn detection and the full tool schema in one
+        payload. Send it in <code>onopen</code>, before anything else.
+      </p>
+
+      <figure class="code">
+        <figcaption>
+          <span>lib/useVoiceAgent.ts</span><em>the entire configuration surface</em>
+        </figcaption>
+        <pre>sock.onopen = () =&gt; sock.send(JSON.stringify({
+  type: <span class="s">"session.update"</span>,
+  session: {
+    system_prompt: SYSTEM_PROMPT,
+    greeting: GREETING,              <span class="c">// agent speaks first, unprompted</span>
+    input: {
+      format: { encoding: <span class="s">"audio/pcm"</span> },
+      keyterms: KEYTERMS,
+      turn_detection: TURN_DETECTION,   <span class="c">// rung 06</span>
+    },
+    output: {
+      voice: <span class="s">"alba"</span>,
+      format: { encoding: <span class="s">"audio/pcm"</span> },
+      volume: 90,
+    },
+    tools: TOOLS,                       <span class="c">// rung 08</span>
+  },
+}));
+
+<span class="c">// audio up: base64 PCM16 wrapped in JSON, 24kHz, every 50ms</span>
+sock.send(JSON.stringify({ type: <span class="s">"input.audio"</span>, audio: int16ToBase64(buf) }));</pre>
+      </figure>
+
+      <p class="prose">
+        Then you wait for <code>session.ready</code> — that is when the session
+        exists and when you should <em>start capturing</em>. Starting the mic
+        before it lands wastes the first second of the call. Everything after
+        that is a single <code>switch</code> over <code>msg.type</code>; the
+        full inventory is in the <a href="#ref">wire reference</a>.
+      </p>
+      <p class="prose">
+        The event you will handle most is <code>reply.audio</code>, which
+        arrives as base64 PCM16 chunks at whatever pace the model generates.
+        Don't log it — it dominates the feed. Count it instead.
+      </p>
+
+      <div class="trap">
+        <span
+          ><strong>Closing the socket is not ending the session.</strong> Send
+          <code>{"type":"session.end"}</code>, wait for the acknowledgement, and
+          only then <code>close()</code>. Dropping the connection cold can leave
+          the session running and billing. In Carvoice that's a 700&nbsp;ms
+          grace window in <code>stop()</code> before the close.</span
+        >
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ 06 ═══════════════════════════════════════════════════════════ -->
+  <section class="rung" id="r06">
+    <div class="rail"><b>06</b><i></i></div>
+    <div class="rung-head">
+      <h2>Turn detection — where your latency actually lives</h2>
+      <p class="need">
+        You will spend days optimising the wrong thing unless you understand
+        this: endpointing <em>is</em> the latency. Almost all of it.
+      </p>
+    </div>
+    <div class="rung-body">
+      <p class="prose">
+        The server cannot know you finished a sentence. It can only notice you
+        went quiet and then <em>wait</em> to see whether you start again. That
+        wait is a hard floor under every reply, and it dwarfs recognition,
+        reasoning and speech generation combined.
+      </p>
+
+      <figure class="code">
+        <figcaption>
+          <span>lib/agent.ts</span><em>four numbers, measured not guessed</em>
+        </figcaption>
+        <pre>export const TURN_DETECTION = {
+  vad_threshold: 0.5,      <span class="c">// how loud counts as voice</span>
+  min_silence: 240,        <span class="c">// ms of quiet before a turn CAN close</span>
+  max_silence: 800,        <span class="c">// ms after which it closes regardless</span>
+  interrupt_response: true,<span class="c">// let the user cut the agent off — rung 07</span>
+};</pre>
+      </figure>
+
+      <p class="prose">
+        <code>min_silence</code> is the floor: no reply can be faster than this,
+        ever. <code>max_silence</code> is the ceiling for a speaker who pauses
+        mid-thought — it is what stops "so… I was thinking…" from being read as
+        two turns. The tradeoff between them is the whole design space, and it is
+        not a free lunch:
+      </p>
+
+      <div class="nums">
+        <div class="num-card">
+          <b>808<small>&thinsp;ms</small></b>
+          <p>Best voice-to-voice at 240/800</p>
+        </div>
+        <div class="num-card">
+          <b>1.6<small>&thinsp;s</small></b>
+          <p>Typical voice-to-voice, same settings</p>
+        </div>
+        <div class="num-card m">
+          <b>−150<small>&thinsp;ms</small></b>
+          <p>What dropping to 160/640 bought</p>
+        </div>
+        <div class="num-card m">
+          <b>1<small>&thinsp;lost tool call</small></b>
+          <p>What it cost — clipped speech, mid-sentence</p>
+        </div>
+      </div>
+
+      <p class="prose">
+        Measured on this build, on a laptop, on wifi. Cutting the silence
+        windows genuinely made it snappier and genuinely started cutting the
+        speaker off mid-sentence — and being interrupted by the agent is a far
+        worse failure than waiting 150&nbsp;ms longer. 240/800 shipped. Keep
+        both values in env vars so you can re-tune per room rather than per
+        deploy.
+      </p>
+    </div>
+  </section>
+
+  <!-- ══ 07 ═══════════════════════════════════════════════════════════ -->
+  <section class="rung" id="r07">
+    <div class="rail"><b>07</b><i></i></div>
+    <div class="rung-head">
+      <h2>Barge-in</h2>
+      <p class="need">
+        The server stops generating when you interrupt. It cannot stop audio
+        that is already sitting in your playback queue — that part is yours.
+      </p>
+    </div>
+    <div class="rung-body">
+      <p class="prose">
+        With <code>interrupt_response: true</code>, the moment the server hears
+        you it emits <code>input.speech.started</code> and stops producing
+        speech. But the agent generates faster than real time, so you are
+        holding a second or more of audio it has already sent. If you don't
+        throw that away, the agent keeps talking over the person who just
+        interrupted it — which reads as broken far more than latency does.
+      </p>
+
+      <figure class="code">
+        <figcaption>
+          <span>lib/useVoiceAgent.ts</span><em>one event, one hard stop</em>
+        </figcaption>
+        <pre><span class="k">case</span> <span class="s">"input.speech.started"</span>: {
+  <span class="c">// hard-stop every scheduled AudioBufferSourceNode. discardedMs is how</span>
+  <span class="c">// far ahead of itself the agent had run — a useful thing to surface.</span>
+  const dropped = player.current?.clear();
+  if (dropped &amp;&amp; dropped.discardedMs &gt; 0) {
+    setMetrics((m) =&gt; ({ ...m, discardedMs: dropped.discardedMs }));
+  }
+  setTurnState(<span class="s">"listening"</span>);
+  break;
+}
+<span class="c">// and the other half: reply.done tells you WHY the reply ended</span>
+<span class="k">case</span> <span class="s">"reply.done"</span>:
+  if (msg.status === <span class="s">"interrupted"</span>) countInterruption();
+  break;</pre>
+      </figure>
+
+      <div class="trap">
+        <span
+          ><strong>Without headphones, barge-in fires in a loop.</strong> The mic
+          picks up the agent through the speakers, the server hears "speech",
+          interrupts the agent, the agent restarts, the mic hears it again.
+          <code>echoCancellation: true</code> on the <code>getUserMedia</code>
+          constraints helps and does not solve it. Headphones solve it. Say so
+          in your README.</span
+        >
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ 08 ═══════════════════════════════════════════════════════════ -->
+  <section class="rung" id="r08">
+    <div class="rail"><b>08</b><i></i></div>
+    <div class="rung-head">
+      <h2>Tool calling</h2>
+      <p class="need">
+        This is the rung that turns a talking demo into software. It is also
+        where the model's failure modes hit your UI directly.
+      </p>
+    </div>
+    <div class="rung-body">
+      <p class="prose">
+        Tools go in <code>session.update</code> as JSON Schema. The loop is:
+        server sends <code>tool.call</code> with a <code>call_id</code>,
+        <code>name</code> and <code>arguments</code>; you run it; you send back
+        <code>tool.result</code> with the same <code>call_id</code> and the
+        result <em>JSON-stringified</em> into the <code>result</code> field.
+      </p>
+
+      <figure class="code">
+        <figcaption>
+          <span>lib/agent.ts</span><em>enums are a validity guarantee</em>
+        </figcaption>
+        <pre>{
+  type: <span class="s">"function"</span>,
+  name: <span class="s">"show_car"</span>,
+  description:
+    <span class="s">"Bring a specific car up on the customer's screen. Call this before "</span> +
+    <span class="s">"discussing any car so they are looking at the one you mean."</span>,
+  parameters: {
+    type: <span class="s">"object"</span>,
+    properties: { car_id: { type: <span class="s">"string"</span>, enum: carIdEnum } },
+    required: [<span class="s">"car_id"</span>],
+  },
+  execution_mode: <span class="s">"hold"</span>,   <span class="c">// silent + instant: no spoken filler</span>
+  timeout_seconds: 5,
+}</pre>
+      </figure>
+
+      <p class="prose">
+        Three design decisions worth copying:
+      </p>
+      <ul class="plain">
+        <li>
+          <strong>Constrain every identifier with <code>enum</code>.</strong>
+          Generating the enum from your real data means an invalid ID is not a
+          runtime branch you have to handle — the model cannot produce one. Same
+          for term lengths, credit tiers, anything with a fixed set.
+        </li>
+        <li>
+          <strong><code>hold</code> vs <code>interactive</code>.</strong>
+          <code>hold</code> is for tools that finish instantly and should stay
+          silent — navigation, showing something on screen. The agent just waits.
+          <code>interactive</code> lets the agent speak filler while the tool
+          runs, which is right for anything that takes real time and wrong for
+          anything that doesn't (you get "let me pull that up for you" over an
+          operation that already finished).
+        </li>
+        <li>
+          <strong>Write the <em>when</em> into the description.</strong>
+          "Call this before discussing any car" is doing more work than the
+          schema is. The system prompt then reinforces it: <em>never do money
+          math in your head, call <code>estimate_payment</code> and read back
+          the number.</em> An LLM that does arithmetic in-prompt will quietly be
+          wrong; a tool won't.
+        </li>
+      </ul>
+
+      <div class="trap">
+        <span
+          ><strong>Models re-issue identical tool calls in the same
+          breath.</strong> Replaying the <em>result</em> is harmless. Replaying
+          the <em>side effect</em> makes your UI flash twice. Key on
+          name&nbsp;+&nbsp;sorted-args and reuse the first result inside a short
+          window — 15&nbsp;s in Carvoice's <code>createToolRunner</code>. Return
+          a <code>cached</code> flag so you can see it happening rather than
+          wondering.</span
+        >
+      </div>
+
+      <figure class="code">
+        <figcaption>
+          <span>lib/useVoiceAgent.ts</span><em>the handler, end to end</em>
+        </figcaption>
+        <pre><span class="k">case</span> <span class="s">"tool.call"</span>: {
+  const t0 = performance.now();
+  let result;
+  try {
+    result = callTool.current(String(msg.name), msg.arguments ?? {}, fx.current).result;
+  } catch (e) {
+    result = { error: String(e) };   <span class="c">// always answer. never leave a call open.</span>
+  }
+  sock.send(JSON.stringify({
+    type: <span class="s">"tool.result"</span>,
+    call_id: String(msg.call_id),
+    result: JSON.stringify(result),  <span class="c">// a STRING, not an object</span>
+  }));
+  break;
+}</pre>
+      </figure>
+      <p class="prose">
+        Errors are results. Returning
+        <code>{ error: "unknown car_id", valid: [...] }</code> lets the model
+        recover on its own turn; throwing, or silently not replying, hangs the
+        conversation until <code>timeout_seconds</code> expires.
+      </p>
+    </div>
+  </section>
+
+  <!-- ══ 09 ═══════════════════════════════════════════════════════════ -->
+  <section class="rung" id="r09">
+    <div class="rail"><b>09</b><i></i></div>
+    <div class="rung-head">
+      <h2>Playback you still own</h2>
+      <p class="need">
+        Chunks arrive in bursts, at network pace. Speech must play out at
+        exactly real-time pace. Reconciling those two is your job.
+      </p>
+    </div>
+    <div class="rung-body">
+      <p class="prose">
+        You cannot just play each chunk as it arrives — the gaps between
+        arrivals become audible holes. You schedule them on the Web Audio
+        clock instead: keep a <code>nextTime</code> cursor, start each buffer
+        exactly where the last one ended, and advance the cursor by that
+        buffer's duration. Samples then play back-to-back regardless of when
+        they landed.
+      </p>
+
+      <figure class="code">
+        <figcaption>
+          <span>lib/audio.ts</span><em>PcmPlayer.push</em>
+        </figcaption>
+        <pre><span class="c">// starved = the previous chunk finished before this one arrived, i.e. the</span>
+<span class="c">// listener heard a gap. Surface it — it is your network telling you something.</span>
+const starved = this.queued &gt; 0 &amp;&amp; this.nextTime &lt; this.ctx.currentTime;
+
+const buf = this.ctx.createBuffer(1, f.length, this.rate);
+buf.copyToChannel(f, 0);                 <span class="c">// f = Int16 / 32768 → Float32</span>
+const src = this.ctx.createBufferSource();
+src.buffer = buf;
+src.connect(this.gain);
+
+<span class="c">// 60ms jitter cushion when starting cold or recovering from a gap</span>
+if (this.nextTime &lt; this.ctx.currentTime) this.nextTime = this.ctx.currentTime + 0.06;
+src.start(this.nextTime);
+this.nextTime += buf.duration;            <span class="c">// the whole trick, right here</span>
+this.live.add(src);                       <span class="c">// keep refs so barge-in can stop them</span>
+return { underrun: starved };</pre>
+      </figure>
+
+      <p class="prose">
+        The 60&nbsp;ms cushion is the one tunable: too small and every jitter
+        spike is an audible hole, too large and every reply feels laggy. Track
+        underruns as a counter — it should sit at zero, and if it climbs your
+        cushion is too thin for the network you're on.
+      </p>
+      <p class="prose">
+        Hold references to every live <code>AudioBufferSourceNode</code>. You
+        need them for rung 07: barge-in means calling <code>stop()</code> on all
+        of them, clearing <code>nextTime</code>, and reporting how much audio you
+        just threw away.
+      </p>
+    </div>
+  </section>
+
+  <!-- ══ 10 ═══════════════════════════════════════════════════════════ -->
+  <section class="rung" id="r10">
+    <div class="rail"><b>10</b><i></i></div>
+    <div class="rung-head">
+      <h2>Prompting for speech, not text</h2>
+      <p class="need">
+        Everything the model writes gets spoken aloud. A prompt tuned for a chat
+        window produces an agent that reads bullet points to a customer.
+      </p>
+    </div>
+    <div class="rung-body">
+      <p class="prose">
+        A chat model's defaults are all wrong for voice: it's verbose, it
+        formats, it writes numbers as digits, and it ends every message with a
+        follow-up question. Each of those has to be explicitly beaten out of it.
+      </p>
+
+      <figure class="code">
+        <figcaption>
+          <span>lib/agent.ts</span><em>SYSTEM_PROMPT · "How to talk"</em>
+        </figcaption>
+        <pre>- You are on a voice call. Keep replies to one or two sentences. Never use
+  lists, markdown, or symbols — everything you say gets spoken aloud.
+- Say prices as words a person would say: "thirty-eight nine ninety", not
+  "$38,990.00".
+- Be warm and direct. No corporate filler, no "as an AI". You are a person
+  doing a job.
+- Answer what was asked, then stop talking. Do not tack a follow-up question
+  onto every reply — only ask when you still need something to finish the task.
+- Ask one question at a time.</pre>
+      </figure>
+
+      <p class="prose">
+        Structurally, the prompt does four things and they are worth separating
+        in your own: state the <strong>identity and channel</strong> ("speaking
+        out loud over the phone" changes the register more than any style rule);
+        inline the <strong>small, closed data set</strong> the agent reasons over
+        as JSON, so it never has to guess what exists; give
+        <strong>tool discipline</strong> as rules, not hints ("call each tool at
+        most once per request", "after a tool returns, answer out loud right
+        away — do not go silent"); and state the
+        <strong>boundaries</strong> — what it must refuse and what it should hand
+        to a human.
+      </p>
+      <p class="prose">
+        <code>greeting</code> is a separate field for a reason. Waiting for the
+        user to speak first on a voice call reads as a dead line; the greeting
+        makes the agent open the conversation the instant the session is ready.
+      </p>
+    </div>
+  </section>
+
+  <!-- ══ 11 ═══════════════════════════════════════════════════════════ -->
+  <section class="rung" id="r11">
+    <div class="rail"><b>11</b><i></i></div>
+    <div class="rung-head">
+      <h2>Measuring honestly</h2>
+      <p class="need">
+        The obvious way to measure latency on this API returns numbers that
+        look impossible. Understanding why is the difference between a real
+        metric and a lie.
+      </p>
+    </div>
+    <div class="rung-body">
+      <p class="prose">
+        The intuitive measurement is <code>transcript.user</code> → first
+        <code>reply.audio</code>: transcript final, reply starts, subtract. On
+        this API it yields <strong>0–11&nbsp;ms</strong>. Not because it's fast —
+        because the pipeline is <em>overlapped</em>. The reply audio is already
+        generated by the time the transcript is reported final, so
+        <code>input.speech.stopped</code>, <code>transcript.user</code>,
+        <code>reply.started</code> and the first <code>reply.audio</code> all
+        arrive in a single burst. Every server-to-server interval you can
+        measure is an artifact of that burst.
+      </p>
+
+      <figure class="dgm">
+        <svg
+          class="dg"
+          viewBox="0 0 800 172"
+          role="img"
+          aria-labelledby="tl-title"
+        >
+          <title id="tl-title">
+            Timeline: the caller stops speaking, the server waits out min_silence
+            and does its overlapped work, then all four server events arrive in a
+            single burst just before the agent's audio starts. Measuring between
+            those events spans 0 to 11 milliseconds; the interval the caller
+            actually feels spans the whole 808 to 1720 milliseconds.
+          </title>
+
+          <!-- the wire, left to right -->
+          <text class="hd" x="8" y="26">the wire</text>
+          <rect class="speech" x="8" y="38" width="132" height="34" rx="4" />
+          <text x="18" y="59">you speak</text>
+
+          <rect class="wait" x="140" y="38" width="96" height="34" rx="4" />
+          <text class="mu" x="150" y="53">min_silence</text>
+          <text class="mu" x="150" y="66">240 ms</text>
+
+          <rect class="work" x="236" y="38" width="366" height="34" rx="4" />
+          <text x="248" y="59">
+            STT · turn close · reasoning · TTS — overlapped
+          </text>
+
+          <rect class="out" x="618" y="38" width="174" height="34" rx="4" />
+          <text x="628" y="59">agent audio plays</text>
+
+          <!-- the burst: four events at effectively one instant -->
+          <line class="burst" x1="600" y1="32" x2="600" y2="80" />
+          <line class="burst" x1="606" y1="32" x2="606" y2="80" />
+          <line class="burst" x1="612" y1="32" x2="612" y2="80" />
+          <path class="brk-bad" d="M596 80 L596 90 L616 90 L616 80" />
+          <text class="bad" text-anchor="end" x="590" y="88">
+            all four server events land here —
+          </text>
+          <text class="bad" text-anchor="end" x="590" y="104">
+            0–11 ms apart, so meaningless
+          </text>
+
+          <!-- the only interval a caller can feel -->
+          <line class="tick" x1="140" y1="72" x2="140" y2="118" />
+          <line class="tick" x1="618" y1="72" x2="618" y2="118" />
+          <path class="brk" d="M140 112 L140 126 L618 126 L618 112" />
+          <text class="gd" x="150" y="146">
+            what the caller feels — 808 ms best · 1.58–1.72 s typical
+          </text>
+        </svg>
+        <figcaption>
+          Measured against the live Voice Agent API at
+          <span class="mono">min_silence 240 / max_silence 800</span>. The only
+          honest anchor is client-side: the last mic chunk whose RMS exceeded
+          ~0.015, which is the moment the speaker's mouth closed.
+        </figcaption>
+      </figure>
+
+      <p class="prose">
+        So you anchor locally. Run a trivial VAD over the same PCM chunks you
+        are already sending — root-mean-square above a threshold means voice —
+        and stamp the time. That timestamp is what the caller experiences, and it
+        is the only defensible start point.
+      </p>
+
+      <figure class="code">
+        <figcaption>
+          <span>lib/useVoiceAgent.ts</span><em>three guards that keep it honest</em>
+        </figcaption>
+        <pre><span class="c">// 1. anchor on the mic, not on a server event</span>
+if (rms(samples) &gt; 0.015) lastVoicedAt.current = performance.now();
+
+<span class="c">// 2. require a FRESH reply.started. otherwise a reply.audio chunk from the</span>
+<span class="c">//    reply still playing gets attributed to the turn that just landed.</span>
+if (awaitingFirstAudio.current &amp;&amp; replyStarted.current) {
+  const e2eMs = Math.round(performance.now() - lastVoicedAt.current);
+  lastVoicedAt.current = null;   <span class="c">// consumed — never reused for a later turn</span>
+
+  <span class="c">// 3. nothing can beat min_silence. a "faster" sample means the mic was</span>
+  <span class="c">//    still hearing voice (or speaker bleed) when the turn closed.</span>
+  if (e2eMs &gt;= TURN_DETECTION.min_silence) e2eSamples.current.push(e2eMs);
+}</pre>
+      </figure>
+
+      <p class="prose">
+        Report the distribution, not the best case. Nearest-rank p50 and p95 over
+        every turn in the call, plus the count of samples — a p95 over four turns
+        is a single sample wearing a suit, and saying so is what makes the rest
+        of the numbers believable. Alongside it, accrue cost in real time:
+        <span class="mono">seconds ÷ 3600 × 4.50</span>. Watching a number tick
+        up during a call communicates the pricing model better than the pricing
+        page does.
+      </p>
+    </div>
+  </section>
+
+  <!-- ══ 12 ═══════════════════════════════════════════════════════════ -->
+  <section class="rung" id="r12">
+    <div class="rail"><b>12</b><i></i></div>
+    <div class="rung-head">
+      <h2>Testing without a microphone</h2>
+      <p class="need">
+        A system you can only exercise by talking to it is a system you will not
+        exercise. The whole loop is testable headlessly.
+      </p>
+    </div>
+    <div class="rung-body">
+      <p class="prose">
+        Nothing in the agent loop requires a browser. Synthesise the customer
+        side, feed the bytes straight into the socket, and assert on what comes
+        back. On macOS, <code>say</code> writes exactly the format the wire
+        wants:
+      </p>
+
+      <figure class="code">
+        <figcaption>
+          <span>scripts/smoke.mts</span><em>run it before every demo</em>
+        </figcaption>
+        <pre>say -v Samantha -o /tmp/q1.wav --data-format=LEI16@24000 \
+  <span class="s">"Hi, I'm looking for a truck. Show me the Rivian."</span>
+npx tsx scripts/smoke.mts /tmp/q1.wav /tmp/q2.wav</pre>
+      </figure>
+
+      <p class="prose">
+        The script imports the <em>same</em> <code>SYSTEM_PROMPT</code>,
+        <code>TOOLS</code>, <code>TURN_DETECTION</code> and
+        <code>createToolRunner</code> the browser uses, so a passing smoke test
+        is evidence about the real configuration rather than a parallel one. It
+        prints the transcript, every tool call with its arguments, and latency
+        percentiles — then exits non-zero if the agent never replied. Insert a
+        silence gap between questions so the server's endpointing actually fires.
+      </p>
+
+      <div class="trap">
+        <span
+          ><strong><code>say</code>'s WAV is not 44 bytes of header.</strong> It
+          writes non-standard <code>JUNK</code> and <code>FLLR</code> chunks
+          before the audio. Walk the RIFF chunk list for the
+          <code>data</code> chunk instead of slicing a fixed offset, or you will
+          send chunk headers to the API as audio and get confident nonsense
+          back.</span
+        >
+      </div>
+
+      <figure class="code">
+        <figcaption>
+          <span>scripts/smoke.mts</span><em>eleven lines, saves an evening</em>
+        </figcaption>
+        <pre>function pcmFromWav(path: string): Buffer {
+  const d = readFileSync(path);
+  if (d.subarray(0, 4).toString() !== <span class="s">"RIFF"</span>) throw new Error(<span class="s">"not a RIFF file"</span>);
+  let i = 12;
+  while (i &lt; d.length - 8) {
+    const id = d.subarray(i, i + 4).toString();
+    const size = d.readUInt32LE(i + 4);
+    if (id === <span class="s">"data"</span>) return d.subarray(i + 8, i + 8 + size);
+    i += 8 + size + (size &amp; 1);   <span class="c">// chunks are word-aligned</span>
+  }
+  throw new Error(<span class="s">"no data chunk"</span>);
+}</pre>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ══ reference ════════════════════════════════════════════════════ -->
+  <section class="flat" id="ref">
+    <div class="sec-head">
+      <h2>Wire reference</h2>
+      <p class="eyebrow">observed on a live session, not from docs</p>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 22px">
+      <div>
+        <div class="sub-head">
+          <h3>Voice Agent API</h3>
+          <span class="url">agents.assemblyai.com/v1/ws</span>
+        </div>
+        <div class="tbl">
+          <table>
+            <thead>
+              <tr>
+                <th></th>
+                <th class="mono">type</th>
+                <th>Meaning</th>
+                <th>What you do with it</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="dir out">you →</span></td>
+                <td class="mono">session.update</td>
+                <td>Prompt, greeting, voice, formats, turn detection, tools</td>
+                <td>Send once, in <code>onopen</code></td>
+              </tr>
+              <tr>
+                <td><span class="dir out">you →</span></td>
+                <td class="mono">input.audio</td>
+                <td>base64 PCM16, 24&nbsp;kHz, inside JSON</td>
+                <td>Every 50&nbsp;ms while live</td>
+              </tr>
+              <tr>
+                <td><span class="dir out">you →</span></td>
+                <td class="mono">tool.result</td>
+                <td>
+                  Matching <code>call_id</code> + stringified result
+                </td>
+                <td>Always answer, errors included</td>
+              </tr>
+              <tr>
+                <td><span class="dir out">you →</span></td>
+                <td class="mono">session.end</td>
+                <td>Ends and stops billing the session</td>
+                <td>Send, wait, <em>then</em> close</td>
+              </tr>
+              <tr>
+                <td><span class="dir in">→ you</span></td>
+                <td class="mono">session.updated</td>
+                <td>Your <code>session.update</code> was accepted</td>
+                <td>Nothing — but its absence means bad config</td>
+              </tr>
+              <tr>
+                <td><span class="dir in">→ you</span></td>
+                <td class="mono">session.ready</td>
+                <td>Session exists; carries <code>session_id</code></td>
+                <td>Start capturing now, not before</td>
+              </tr>
+              <tr>
+                <td><span class="dir in">→ you</span></td>
+                <td class="mono">input.speech.started</td>
+                <td>Server hears the user — the barge-in signal</td>
+                <td>Clear the playback queue</td>
+              </tr>
+              <tr>
+                <td><span class="dir in">→ you</span></td>
+                <td class="mono">input.speech.stopped</td>
+                <td>Server believes the user finished</td>
+                <td>State only — do not time from it</td>
+              </tr>
+              <tr>
+                <td><span class="dir in">→ you</span></td>
+                <td class="mono">transcript.user.delta</td>
+                <td>Provisional user transcript</td>
+                <td>Render as a live caption</td>
+              </tr>
+              <tr>
+                <td><span class="dir in">→ you</span></td>
+                <td class="mono">transcript.user</td>
+                <td>Final user transcript; the turn is closed</td>
+                <td>Commit to the timeline, count the turn</td>
+              </tr>
+              <tr>
+                <td><span class="dir in">→ you</span></td>
+                <td class="mono">reply.started</td>
+                <td>A new reply is beginning</td>
+                <td>Gate your latency clock on this</td>
+              </tr>
+              <tr>
+                <td><span class="dir in">→ you</span></td>
+                <td class="mono">reply.audio</td>
+                <td>base64 PCM16 chunk of the spoken reply</td>
+                <td>Schedule it; count, don't log</td>
+              </tr>
+              <tr>
+                <td><span class="dir in">→ you</span></td>
+                <td class="mono">transcript.agent.delta</td>
+                <td>
+                  The reply's text streaming in token by token — it dominates the
+                  feed alongside <code>reply.audio</code>
+                </td>
+                <td>
+                  Render a live caption, or ignore it and wait for the final
+                </td>
+              </tr>
+              <tr>
+                <td><span class="dir in">→ you</span></td>
+                <td class="mono">transcript.agent</td>
+                <td>
+                  What the agent said, with an <code>interrupted</code> flag
+                </td>
+                <td>Render the transcript</td>
+              </tr>
+              <tr>
+                <td><span class="dir in">→ you</span></td>
+                <td class="mono">reply.done</td>
+                <td>
+                  Reply finished; <code>status</code> may be
+                  <code>interrupted</code>
+                </td>
+                <td>Return to listening; count interruptions</td>
+              </tr>
+              <tr>
+                <td><span class="dir in">→ you</span></td>
+                <td class="mono">tool.call</td>
+                <td><code>call_id</code>, <code>name</code>, <code>arguments</code></td>
+                <td>Run it, reply with <code>tool.result</code></td>
+              </tr>
+              <tr>
+                <td><span class="dir in">→ you</span></td>
+                <td class="mono">session.error</td>
+                <td><code>code</code> + <code>message</code></td>
+                <td>Surface it — it is usually a config mistake</td>
+              </tr>
+              <tr>
+                <td><span class="dir in">→ you</span></td>
+                <td class="mono">session.ended</td>
+                <td>Acknowledgement of <code>session.end</code></td>
+                <td>Safe to close and tear down</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div>
+        <div class="sub-head">
+          <h3>Universal-3.5&nbsp;Pro Realtime</h3>
+          <span class="url">streaming.assemblyai.com/v3/ws</span>
+        </div>
+        <div class="tbl">
+          <table>
+            <thead>
+              <tr>
+                <th></th>
+                <th class="mono">type</th>
+                <th>Meaning</th>
+                <th>What you do with it</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="dir out">you →</span></td>
+                <td class="mono">(binary frame)</td>
+                <td>Raw PCM16 <code>ArrayBuffer</code>, 16&nbsp;kHz</td>
+                <td>
+                  Set <code>binaryType</code>, send the buffer — no JSON
+                </td>
+              </tr>
+              <tr>
+                <td><span class="dir out">you →</span></td>
+                <td class="mono">Terminate</td>
+                <td>Ends the session</td>
+                <td>Send, brief pause, close</td>
+              </tr>
+              <tr>
+                <td><span class="dir in">→ you</span></td>
+                <td class="mono">Begin</td>
+                <td>
+                  Session open; echoes the resolved
+                  <code>speech_model</code>
+                </td>
+                <td>Only now start sending audio</td>
+              </tr>
+              <tr>
+                <td><span class="dir in">→ you</span></td>
+                <td class="mono">SpeechStarted</td>
+                <td>First voice detected</td>
+                <td>Anchor for first-partial timing</td>
+              </tr>
+              <tr>
+                <td><span class="dir in">→ you</span></td>
+                <td class="mono">Turn</td>
+                <td>
+                  <code>turn_order</code>, <code>words[]</code> with
+                  <code>word_is_final</code> and <code>confidence</code>,
+                  <code>transcript</code>, <code>end_of_turn</code>,
+                  <code>turn_is_formatted</code>,
+                  <code>end_of_turn_confidence</code>
+                </td>
+                <td>
+                  Render the immutable prefix; commit only when
+                  <code>end_of_turn &amp;&amp; turn_is_formatted</code>
+                </td>
+              </tr>
+              <tr>
+                <td><span class="dir in">→ you</span></td>
+                <td class="mono">Termination</td>
+                <td>Session closed</td>
+                <td>Tear down</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div>
+        <div class="sub-head"><h3>Things that fail silently</h3></div>
+        <div class="tbl">
+          <table>
+            <thead>
+              <tr>
+                <th>Symptom</th>
+                <th>Cause</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Socket open, nothing transcribed, no error</td>
+                <td>
+                  Wrong audio shape for the endpoint — base64-in-JSON to the
+                  streaming socket, or raw frames to the agent socket
+                </td>
+              </tr>
+              <tr>
+                <td>Transcription is confident and wrong</td>
+                <td>
+                  Wrong sample rate declared, or chunk headers sent as audio
+                  (rung 12)
+                </td>
+              </tr>
+              <tr>
+                <td>401 on token mint</td>
+                <td>
+                  <code>Bearer</code> prefix on the streaming endpoint, or
+                  missing on the agents endpoint
+                </td>
+              </tr>
+              <tr>
+                <td>First second of the call is missing</td>
+                <td>Started capturing before <code>session.ready</code> / <code>Begin</code></td>
+              </tr>
+              <tr>
+                <td>Latency measures 0–11&nbsp;ms</td>
+                <td>Timing between server events on an overlapped pipeline</td>
+              </tr>
+              <tr>
+                <td>Agent talks over itself in a loop</td>
+                <td>No headphones — speaker bleed retriggers barge-in</td>
+              </tr>
+              <tr>
+                <td>Clicks at regular intervals in captured audio</td>
+                <td>
+                  Resampler dropping its fractional position or tail between
+                  <code>process()</code> calls
+                </td>
+              </tr>
+              <tr>
+                <td>Bill higher than session time</td>
+                <td>Socket closed without <code>session.end</code></td>
+              </tr>
+              <tr>
+                <td>UI action fires twice</td>
+                <td>Duplicate tool call replayed as a side effect</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ build order ══════════════════════════════════════════════════ -->
+  <section class="flat" id="order">
+    <div class="sec-head">
+      <h2>Build it in this order</h2>
+      <p class="eyebrow">each step is verifiable before the next</p>
+    </div>
+
+    <ol class="build">
+      <li>
+        <span>
+          <strong>Mint a token from a server route and print it.</strong>
+          <span class="how"
+            >No audio, no socket. Proves the key, the header shape and your env
+            wiring. Ten minutes.</span
+          >
+        </span>
+      </li>
+      <li>
+        <span>
+          <strong>Open the streaming socket and log every message.</strong>
+          <span class="how"
+            >Still no microphone — send a <code>say</code>-generated WAV's data
+            chunk. You should see <code>Begin</code>, then
+            <code>Turn</code> after <code>Turn</code>.</span
+          >
+        </span>
+      </li>
+      <li>
+        <span>
+          <strong>Add the worklet and get your own voice transcribed.</strong>
+          <span class="how"
+            >This is the rung that eats a day. Render the immutable prefix
+            differently from the tail so you can <em>see</em> the model
+            committing.</span
+          >
+        </span>
+      </li>
+      <li>
+        <span>
+          <strong
+            >Add <code>prompt</code>, <code>keyterms_prompt</code> and
+            <code>voice_focus</code>.</strong
+          >
+          <span class="how"
+            >Read the same domain sentence before and after. This is where
+            accuracy comes from, and it is free.</span
+          >
+        </span>
+      </li>
+      <li>
+        <span>
+          <strong>Switch to the agent socket and just listen.</strong>
+          <span class="how"
+            >A <code>session.update</code> with a prompt and a greeting, no
+            tools. Log the event feed until the burst pattern in rung 11 is
+            familiar.</span
+          >
+        </span>
+      </li>
+      <li>
+        <span>
+          <strong>Play the reply audio with a scheduled queue.</strong>
+          <span class="how"
+            >First full loop: you talk, it answers. Get the jitter cushion right
+            here, while there is nothing else to blame.</span
+          >
+        </span>
+      </li>
+      <li>
+        <span>
+          <strong>Wire barge-in.</strong>
+          <span class="how"
+            >Interrupt mid-reply. If the agent keeps talking, you are not
+            clearing the queue. Put headphones on first.</span
+          >
+        </span>
+      </li>
+      <li>
+        <span>
+          <strong>Add one tool that changes something on screen.</strong>
+          <span class="how"
+            ><code>execution_mode: "hold"</code>, enum-constrained argument.
+            Confirm the round trip before adding a second.</span
+          >
+        </span>
+      </li>
+      <li>
+        <span>
+          <strong>Add the dedupe guard.</strong>
+          <span class="how"
+            >You will need it the first time the model calls the same tool
+            twice, which will be soon.</span
+          >
+        </span>
+      </li>
+      <li>
+        <span>
+          <strong>Instrument with a local VAD anchor.</strong>
+          <span class="how"
+            >Only now do you have a number worth quoting — and only with p50, p95
+            and the sample count beside it.</span
+          >
+        </span>
+      </li>
+      <li>
+        <span>
+          <strong>Tune <code>min_silence</code> / <code>max_silence</code> last.</strong>
+          <span class="how"
+            >With measurement in place, the tradeoff is visible instead of
+            vibes. Keep both in env vars.</span
+          >
+        </span>
+      </li>
+      <li>
+        <span>
+          <strong>Write the headless smoke test.</strong>
+          <span class="how"
+            >Importing the real prompt and tools. Run it before every demo, and
+            after every prompt edit.</span
+          >
+        </span>
+      </li>
+    </ol>
+  </section>
+
+  <footer>
+    <p>
+      Every number here was measured in the browser during a live session on this
+      build — a laptop mic, headphones, ordinary wifi, <span class="mono"
+        >min_silence 240 / max_silence 800</span
+      >. Yours will differ; the method is the transferable part. Code references
+      point at real files in this repo. Inventory, financing and bookings in
+      Carvoice are fictional.
+    </p>
+  </footer>
+</div>
